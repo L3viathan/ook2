@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html data-theme="light">
+<head>
+    <script src="/htmx.js"></script>
+    <title>ook2</title>
+    <link rel="stylesheet" href="/style.css">
+    <link rel="stylesheet" href="/pico.min.css">
+    <meta name="htmx-config" content='{{"scrollIntoViewOnBoost": false}}'>
+</head>
+<body hx-boost="true">
+    <header>
+    <nav class="container">
+        <ul><li><a href="/">OOK2</a></li></ul>
+        <!-- <ul><li><a href="/"><img src="/logo.svg" alt="ook2"></a></li></ul> -->
+        <ul>
+            <li><a href="/places" hx-swap="outerHTML" hx-select="#container" hx-push-url="true" hx-target="#container">Places</a></li>
+            <li><a href="/books" hx-swap="outerHTML" hx-select="#container" hx-push-url="true" hx-target="#container">Books</a></li>
+            <li><input
+                id="q"
+                name="q"
+                type="search"
+                hx-get="/books/search"
+                hx-trigger="input changed delay:200ms, search"
+                hx-select="#container"
+                hx-target="#container"
+                hx-push-url="true"
+            ></li>
+        </ul>
+    </nav>
+    </header>
+    <main id="container" class="container">{}</main>
+    <footer>
+        <div id="notifications"></div>
+    </footer>
+</body>
+</html>

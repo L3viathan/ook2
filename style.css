@@ -1,0 +1,72 @@
+html {
+  font-size: 200%;
+  --lightgrey: #f1f1f1;
+}
+.hovershow {
+  display: none;
+  text-decoration: none;
+}
+:hover>.hovershow {
+  display: inline;
+}
+a, .clickable {
+  cursor: pointer;
+}
+
+.book-link {
+  display: inline-block;
+  background-color: #ddeeff;
+  margin: 3px;
+  border: 1px solid #adf;
+  border-radius: 2px;
+}
+
+h2 {
+  margin-top: calc(var(--pico-typography-spacing-vertical) * 0.5) !important;
+  margin-bottom: calc(var(--pico-typography-spacing-vertical) * 0.5) !important;
+}
+
+.rename-input {
+  display: block;
+}
+
+nav {
+  padding: 1em;
+}
+
+nav img{
+  width: 3em;
+  transform: scale(2);
+}
+
+.invalid {
+  opacity: 0.5;
+}
+
+.button-new {
+  float: right;
+}
+
+#container {
+  padding: 1em;
+}
+
+article {
+  overflow: hidden;
+}
+
+article button {
+  float: right;
+}
+
+.prev {
+  float: left;
+  margin-top: 25px;
+  margin-bottom: 15px;
+}
+
+.next {
+  float: right;
+  margin-top: 25px;
+  margin-bottom: 15px;
+}
