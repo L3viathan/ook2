@@ -1,15 +1,13 @@
 import functools
-from types import CoroutineType
-from sanic import Sanic, HTTPResponse, html, file, redirect
 from datetime import datetime
-import httpx
+from types import CoroutineType
+
 import isbnlib
-from isbnlib.registry import bibformatters
+from sanic import Sanic, HTTPResponse, html, file, redirect
+
 import objects as O
 
-bibjson = bibformatters["json"]
 
-CLIENT = httpx.AsyncClient()
 PAGE_SIZE = 20
 app = Sanic("ook2")
 
@@ -170,12 +168,20 @@ async def lend_book(request, book_id: int):
     return f"{book:lend-ui}"
 
 
-@app.post("/book/<book_id>/return")
+@app.post("/books/<book_id>/return")
 @fragment
 async def return_book(request, book_id: int):
     book = O.Book(book_id)
     book.return_()
     return f"{book:lend-ui}"
+
+
+@app.post("/books/<book_id>/fetch")
+@fragment
+async def fetch_book(request, book_id: int):
+    book = O.Book(book_id)
+    book.import_metadata()
+    return f"{book:import-ui}"
 
 
 @app.post("/places/<place_id>/rename")
@@ -193,8 +199,23 @@ async def rename_place(request, place_id: int):
 async def add_book_by_isbn(request, place_id: int):
     place = O.Place(place_id)
     isbn = D(request.form)["isbn"]
-    book = O.Book.new_from_isbn(isbn, place_id=place_id)
-    if book.fetch_metadata():
+    try:
+        book = O.Book.new_from_isbn(isbn, place_id=place_id)
+    except isbnlib.NotValidISBNError:
+        return f"""
+            <input
+                type="text"
+                name="isbn"
+                hx-post="/places/{place_id}/add-book"
+                hx-swap="outerHTML"
+                placeholder="insert ISBN"
+                autofocus
+            >
+            <div hx-swap-oob="beforeend:#notifications">
+                <span class="notification error">Invalid ISBN, try scanning again</span>
+            </div>
+        """
+    if book.title:
         return f"""
             <input
                 type="text"

@@ -1,7 +1,12 @@
 import re
+import json
 from datetime import date, datetime
+import isbnlib
+from isbnlib.registry import bibformatters
 
 from db import conn
+
+bibjson = bibformatters["json"]
 
 UNSET = object()
 class lazy:
@@ -132,6 +137,7 @@ class Book(Model):
         "year",
         "publisher",
         "isbn",
+        "borrowed_to",
         "created_at",
         "imported_at",
         "place",
@@ -157,6 +163,7 @@ class Book(Model):
         self.isbn = row["isbn"]
         self.created_at = row["created_at"]
         self.imported_at = row["imported_at"]
+        self.borrowed_to = row["borrowed_to"]
         if row["place_id"]:
             self.place = Place(row["place_id"])
         else:
@@ -164,26 +171,31 @@ class Book(Model):
 
     @classmethod
     def new_from_isbn(cls, isbn, place_id=None):
+        data = bibjson(isbnlib.meta(isbn))
         cur = conn.cursor()
         cur.execute(
             "INSERT INTO books (isbn, place_id) VALUES (?, ?)",
             (isbn, place_id),
         )
         conn.commit()
-        return Book(cur.lastrowid)
+        book = Book(cur.lastrowid)
+        if data:
+            book.import_metadata(data)
+        return book
 
-    def fetch_metadata(self):
-        if data := bibjson(isbnlib.meta(self.isbn)):
-            book.title = data.get("title")
-            book.authors = ", ".join(
-                sorted(author["name"] for author in data.get("authors", [])),
+    def import_metadata(self, data=None):
+        data = data or bibjson(isbnlib.meta(self.isbn))
+        if data:
+            data = json.loads(data)
+            self.title = data.get("title")
+            print(data)
+            self.authors = ", ".join(
+                sorted(author["name"] for author in data.get("author", [])),
             )
-            book.publisher = data.get("publisher")
-            book.year = data.get("year")
-            book.imported_at = datetime.now()
-            book.save()
-            return True
-        return False
+            self.publisher = data.get("publisher")
+            self.year = data.get("year")
+            self.imported_at = datetime.now()
+            self.save()
 
     @classmethod
     def search(cls, q, *, page_size=20, page_no=0, place_id=None):
@@ -243,9 +255,20 @@ class Book(Model):
                 hx-vals="javascript: title:htmx.find('span').innerHTML"
                 contenteditable
             >{self.title}</span>
-            {self:lend-ui}
+            <div role="group">
+                {self:import-ui}
+                {self:lend-ui}
+            </div>
             </h2>
             """
+        elif fmt == "import-ui":
+            if self.title:
+                return ""
+            return f"""<button
+                class="secondary"
+                hx-post="/books/{self.id}/fetch"
+                hx-swap="outerHTML"
+            >🔎 Fetch</button>"""
         elif fmt == "lend-ui":
             if self.borrowed_to:
                 return f"""<button
@@ -279,7 +302,7 @@ class Book(Model):
                 parts.append(f"""<div class="alert warning">
                     Currently lent out to <strong>{self.borrowed_to}</strong>.
                 </div>""")
-            parts.append(f"<strong>Author:</strong> {self.author}")
+            parts.append(f"<strong>Author:</strong> {self.authors}")
             parts.append(f"<strong>ISBN:</strong> {self.isbn}")
             return "<br>".join(parts)
 
