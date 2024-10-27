@@ -70,3 +70,68 @@ article button {
   margin-top: 25px;
   margin-bottom: 15px;
 }
+
+#notifications {
+  position: fixed;
+  bottom: 5px;
+  right: 5px;
+  text-align: right;
+}
+
+.notification {
+  font-size: medium;
+  display: none;
+}
+.notification:nth-last-child(1) {
+  display: block;
+}
+.notification:nth-last-child(2) {
+  display: block;
+  opacity: 0.9;
+}
+.notification:nth-last-child(3) {
+  display: block;
+  opacity: 0.7;
+}
+.notification:nth-last-child(4) {
+  display: block;
+  opacity: 0.5;
+}
+.notification:nth-last-child(4) {
+  display: block;
+  opacity: 0.25;
+}
+
+.alert {
+  padding: 15px;
+  border: 1px solid #ddd;
+  background-color: #f9f9f9;
+  color: #333;
+  position: relative;
+  margin-bottom: 20px;
+  border-radius: 5px;
+}
+
+.success {
+  background-color: #d4edda;
+  border-color: #c3e6cb;
+  color: #155724;
+}
+
+.error {
+  background-color: #f8d7da;
+  border-color: #f5c6cb;
+  color: #721c24;
+}
+
+.warning {
+  background-color: #fff3cd;
+  border-color: #ffeeba;
+  color: #856404;
+}
+
+.info {
+  background-color: #d1ecf1;
+  border-color: #bee5eb;
+  color: #0c5460;
+}

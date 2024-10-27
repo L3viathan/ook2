@@ -184,7 +184,7 @@ class Book(Model):
             f"""
             SELECT
                 id
-            FROM entities
+            FROM books
             WHERE {" AND ".join(conditions)}
             LIMIT {page_size}
             OFFSET {page_no * page_size}
@@ -259,6 +259,17 @@ class Book(Model):
                 href="/books/{self.id}"
             >
             {self.title}</a>"""
+        elif fmt == "details":
+            parts = []
+            borrow = self.get_active_borrow()
+            if borrow:
+                parts.append(f"""<div class="alert warning">
+                    Currently lent out to <strong>{borrow.lender}</strong>.
+                </div>""")
+            parts.append(f"<strong>Author:</strong> {self.author}")
+            parts.append(f"<strong>ISBN:</strong> {self.isbn}")
+            return "<br>".join(parts)
+
         else:
             return f"""<a
                 class="clickable book-link"

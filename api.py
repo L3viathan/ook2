@@ -201,7 +201,7 @@ async def add_book_by_isbn(request, place_id: int):
                 autofocus
             >
             <div hx-swap-oob="beforeend:#notifications">
-                Found <em>{book.title}</em>
+                <span class="notification">Added <em>{book.title}</em></span>
             </div>
         """
     return f"""
@@ -232,6 +232,9 @@ async def put_book_data(request, book_id: int):
             placeholder="insert ISBN"
             autofocus
         >
+        <div hx-swap-oob="beforeend:#notifications">
+            Added <em>{book.title}</em>
+        </div>
     """
 
 
@@ -263,8 +266,7 @@ async def view_book(request, book_id: int):
             <header>
                 {book:heading}
             </header>
-            Author: {book.author}
-            ISBN: {book.isbn}
+            {book:details}
         </article>
     """
 
@@ -296,6 +298,32 @@ async def list_books(request):
     return "".join(parts) + pagination(
         "/books",
         page_no,
+        more_results=more_results,
+    )
+
+
+@app.get("/books/search")
+@page
+async def search_books(request):
+    page_no = int(request.args.get("page", 1))
+    query = D(request.args).get("q", "")
+    books = O.Book.search(
+        q=query,
+        page_no=page_no - 1,
+        page_size=PAGE_SIZE + 1,  # so we know if there would be more results
+    )
+    parts = []
+    more_results = False
+    for i, book in enumerate(books):
+        if i:
+            parts.append("<br>")
+        if i == PAGE_SIZE:
+            more_results = True
+        else:
+            parts.append(f"{book:full}")
+    return "".join(parts) + pagination(
+        f"/books/search?q={query}",
+        page_no=page_no,
         more_results=more_results,
     )
 
