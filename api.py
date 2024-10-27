@@ -189,9 +189,35 @@ async def rename_place(request, place_id: int):
 async def add_book_by_isbn(request, place_id: int):
     place = O.Place(place_id)
     isbn = D(request.form)["isbn"]
-    if isbn:
-        book = O.Book.new_from_isbn(isbn, place_id=place_id)
-        app.add_task(import_book(book))
+    book = O.Book.new_from_isbn(isbn, place_id=place_id)
+    if await import_book(book):
+        return f"""
+            <input
+                type="text"
+                name="isbn"
+                hx-post="/places/{place_id}/add-book"
+                hx-swap="outerHTML"
+                placeholder="insert ISBN"
+                autofocus
+            >
+        """
+    return f"""
+        <form hx-put="/books/{book.id}">
+            <label>Title <input name="title" placeholder="Title"></label>
+            <label>Author <input name="author" placeholder="Title"></label>
+            <button type="submit">»</button>
+        </form>
+    """
+
+
+@app.put("/books/<book_id>")
+@fragment
+async def put_book_data(request, book_id: int):
+    data = D(request.form)
+    book = O.Book(book_id)
+    book.title = data["title"]
+    book.author = data["author"]
+    book.save()
     return f"""
         <input
             type="text"
@@ -201,27 +227,26 @@ async def add_book_by_isbn(request, place_id: int):
             placeholder="insert ISBN"
             autofocus
         >
-        <div hx-swap-oob="beforeend:#notifications">
-            Inserted book with ISBN {isbn}...
-        </div>
     """
-    return f"{place:heading}"
 
 
 async def import_book(book):
     r = await CLIENT.get(f"https://openlibrary.org/api/books?bibkeys=ISBN:{book.isbn}&jscmd=details&format=json")
     if r.status_code >= 400:
-        return
+        return False
+    success = False
     response = r.json()
     if not response:
-        return
+        return False
     details = response[f"ISBN:{book.isbn}"]["details"]
-    if "title" in details:
-        book.title = details["title"]
+    if "title" not in details:
+        return False
+    book.title = details["title"]
     if "authors" in details:
         book.author = ", ".join(author["name"] for author in details["authors"])
     book.imported_at = datetime.now()
     book.save()
+    return True
 
 
 @app.get("/books/<book_id>")
