@@ -200,11 +200,15 @@ async def add_book_by_isbn(request, place_id: int):
                 placeholder="insert ISBN"
                 autofocus
             >
+            <div hx-swap-oob="beforeend:#notifications">
+                Found <em>{book.title}</em>
+            </div>
         """
     return f"""
         <form hx-put="/books/{book.id}">
+            <input type="hidden" name="place_id" value="{place_id}">
             <label>Title <input name="title" placeholder="Title"></label>
-            <label>Author <input name="author" placeholder="Title"></label>
+            <label>Author <input name="author" placeholder="Author"></label>
             <button type="submit">»</button>
         </form>
     """
@@ -217,6 +221,7 @@ async def put_book_data(request, book_id: int):
     book = O.Book(book_id)
     book.title = data["title"]
     book.author = data["author"]
+    place_id = data["place_id"]
     book.save()
     return f"""
         <input
