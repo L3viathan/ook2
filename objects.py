@@ -128,11 +128,12 @@ class Place(Model):
 class Book(Model):
     fields = (
         "title",
-        "author",
+        "authors",
+        "year",
+        "publisher",
         "isbn",
         "created_at",
         "imported_at",
-        "data_source",
         "place",
     )
     table_name = "books"
@@ -150,11 +151,12 @@ class Book(Model):
         if not row:
             raise ValueError("No book with this ID found")
         self.title = row["title"]
-        self.author = row["author"]
+        self.authors = row["authors"]
+        self.publisher = row["publisher"]
+        self.year = row["year"]
         self.isbn = row["isbn"]
         self.created_at = row["created_at"]
         self.imported_at = row["imported_at"]
-        self.data_source = row["data_source"]
         if row["place_id"]:
             self.place = Place(row["place_id"])
         else:
@@ -169,6 +171,19 @@ class Book(Model):
         )
         conn.commit()
         return Book(cur.lastrowid)
+
+    def fetch_metadata(self):
+        if data := bibjson(isbnlib.meta(self.isbn)):
+            book.title = data.get("title")
+            book.authors = ", ".join(
+                sorted(author["name"] for author in data.get("authors", [])),
+            )
+            book.publisher = data.get("publisher")
+            book.year = data.get("year")
+            book.imported_at = datetime.now()
+            book.save()
+            return True
+        return False
 
     @classmethod
     def search(cls, q, *, page_size=20, page_no=0, place_id=None):
@@ -299,10 +314,17 @@ class Book(Model):
         cur.execute(
             """
             UPDATE books
-            SET title=?, author=?, imported_at=?
+            SET title=?, authors=?, publisher=?, year=?, imported_at=?
             WHERE id = ?
             """,
-            (self.title, self.author, self.imported_at, self.id),
+            (
+                self.title,
+                self.authors,
+                self.publisher,
+                self.year,
+                self.imported_at,
+                self.id,
+            ),
         )
         conn.commit()
 

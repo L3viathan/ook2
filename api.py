@@ -3,7 +3,11 @@ from types import CoroutineType
 from sanic import Sanic, HTTPResponse, html, file, redirect
 from datetime import datetime
 import httpx
+import isbnlib
+from isbnlib.registry import bibformatters
 import objects as O
+
+bibjson = bibformatters["json"]
 
 CLIENT = httpx.AsyncClient()
 PAGE_SIZE = 20
@@ -190,7 +194,7 @@ async def add_book_by_isbn(request, place_id: int):
     place = O.Place(place_id)
     isbn = D(request.form)["isbn"]
     book = O.Book.new_from_isbn(isbn, place_id=place_id)
-    if await import_book(book):
+    if book.fetch_metadata():
         return f"""
             <input
                 type="text"
@@ -207,7 +211,7 @@ async def add_book_by_isbn(request, place_id: int):
     return f"""
         <form hx-put="/books/{book.id}">
             <input type="hidden" name="place_id" value="{place_id}">
-            <label>Title <input name="title" placeholder="Title"></label>
+            <label>Title <input name="title" placeholder="Title" required></label>
             <label>Author <input name="author" placeholder="Author"></label>
             <button type="submit">»</button>
         </form>
@@ -236,25 +240,6 @@ async def put_book_data(request, book_id: int):
             Added <em>{book.title}</em>
         </div>
     """
-
-
-async def import_book(book):
-    r = await CLIENT.get(f"https://openlibrary.org/api/books?bibkeys=ISBN:{book.isbn}&jscmd=details&format=json")
-    if r.status_code >= 400:
-        return False
-    success = False
-    response = r.json()
-    if not response:
-        return False
-    details = response[f"ISBN:{book.isbn}"]["details"]
-    if "title" not in details:
-        return False
-    book.title = details["title"]
-    if "authors" in details:
-        book.author = ", ".join(author["name"] for author in details["authors"])
-    book.imported_at = datetime.now()
-    book.save()
-    return True
 
 
 @app.get("/books/<book_id>")

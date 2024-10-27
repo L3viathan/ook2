@@ -57,11 +57,12 @@ def initial(cur):
             id INTEGER PRIMARY KEY,
             isbn VARCHAR(13),
             title TEXT,
-            author TEXT,
+            authors TEXT,
+            publisher TEXT,
+            year INTEGER,
             created_at TIMESTAMP DEFAULT (datetime('now')),
             imported_at TIMESTAMP,  -- metadata looked up via ISBN
             borrowed_to VARCHAR(64),
-            data_source VARCHAR(32),  -- what source we got info from
             place_id INTEGER,  -- can be null: not in a place
             FOREIGN KEY(place_id) REFERENCES places(id)
         )
