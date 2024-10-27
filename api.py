@@ -166,12 +166,12 @@ async def lend_book(request, book_id: int):
     return f"{book:lend-ui}"
 
 
-@app.post("/borrow/<borrow_id>/return")
+@app.post("/book/<book_id>/return")
 @fragment
-async def return_book(request, borrow_id: int):
-    borrow = O.Borrow(borrow_id)
-    borrow.return_now()
-    return f"{borrow.book:lend-ui}"
+async def return_book(request, book_id: int):
+    book = O.Book(book_id)
+    book.return_()
+    return f"{book:lend-ui}"
 
 
 @app.post("/places/<place_id>/rename")

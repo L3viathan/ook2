@@ -232,14 +232,13 @@ class Book(Model):
             </h2>
             """
         elif fmt == "lend-ui":
-            borrow = self.get_active_borrow()
-            if borrow:
+            if self.borrowed_to:
                 return f"""<button
                     class="secondary"
-                    data-tooltip="borrowed to {borrow.lender}"
+                    data-tooltip="borrowed to {self.borrowed_to}"
                     data-placement="left"
-                    hx-confirm="Did {borrow.lender} return the book?"
-                    hx-post="/borrow/{borrow.id}/return"
+                    hx-confirm="Did {self.borrowed_to} return the book?"
+                    hx-post="/books/{self.id}/return"
                     hx-swap="outerHTML"
                 >🫶 Return</button>"""
             else:
@@ -261,10 +260,9 @@ class Book(Model):
             {self.title}</a>"""
         elif fmt == "details":
             parts = []
-            borrow = self.get_active_borrow()
-            if borrow:
+            if self.borrowed_to:
                 parts.append(f"""<div class="alert warning">
-                    Currently lent out to <strong>{borrow.lender}</strong>.
+                    Currently lent out to <strong>{self.borrowed_to}</strong>.
                 </div>""")
             parts.append(f"<strong>Author:</strong> {self.author}")
             parts.append(f"<strong>ISBN:</strong> {self.isbn}")
@@ -324,51 +322,27 @@ class Book(Model):
         [row] = rows
         return Borrow(row["id"])
 
-    def lend_to(self, lender):
-        print("attempting lend to", repr(lender))
+    def lend_to(self, borrower):
+        print("attempting lend to", repr(borrower))
         cur = conn.cursor()
         cur.execute(
             f"""
-            INSERT INTO borrows
-            (book_id, lender)
-            VALUES
-            (?, ?)
+            UPDATE books
+            SET borrowed_to=?
+            WHERE id=?
             """,
-            (self.id, lender),
+            (borrower, self.id),
         )
         conn.commit()
 
-
-class Borrow(Model):
-    table_name = "borrows"
-    fields = ("lender", "book", "borrowed_at", "returned_at")
-
-    def populate(self):
-        cur = conn.cursor()
-        row = cur.execute(
-            """
-                SELECT
-                    *
-                FROM borrows
-                WHERE id = ?
-            """,
-            (self.id,),
-        ).fetchone()
-        if not row:
-            raise ValueError("No borrow with this ID found")
-        self.borrowed_at = row["borrowed_at"]
-        self.returned_at = row["returned_at"]
-        self.book = Book(row["book_id"])
-        self.lender = row["lender"]
-
-    def return_now(self):
+    def return_(self):
         cur = conn.cursor()
         cur.execute(
             f"""
-            UPDATE borrows
-            SET returned_at=?
+            UPDATE books
+            SET borrowed_to=NULL
             WHERE id=?
             """,
-            (datetime.now(), self.id),
+            (self.id,),
         )
         conn.commit()

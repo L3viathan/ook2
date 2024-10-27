@@ -60,19 +60,9 @@ def initial(cur):
             author TEXT,
             created_at TIMESTAMP DEFAULT (datetime('now')),
             imported_at TIMESTAMP,  -- metadata looked up via ISBN
+            borrowed_to VARCHAR(64),
             data_source VARCHAR(32),  -- what source we got info from
             place_id INTEGER,  -- can be null: not in a place
             FOREIGN KEY(place_id) REFERENCES places(id)
-        )
-    """)
-    cur.execute("""
-        CREATE TABLE borrows
-        (
-            id INTEGER PRIMARY KEY,
-            book_id INTEGER,
-            lender TEXT,
-            borrowed_at TIMESTAMP DEFAULT (datetime('now')),
-            returned_at TIMESTAMP,
-            FOREIGN KEY(book_id) REFERENCES books(id)
         )
     """)
