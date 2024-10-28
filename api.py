@@ -62,9 +62,18 @@ def page(fn):
 @app.get("/")
 @page
 async def index(request):
-    return f"""
-        Hello, World!
-    """
+    parts = [
+        """<table class="striped">""",
+        "<thead>",
+        "<tr><th>Book</th><th>Lent out to</th></tr>",
+        "</thead>",
+        "<tbody>",
+    ]
+    for book in O.Book.all_lent_out():
+        parts.append(f"<tr><td>{book.title}</td><td>{book.borrowed_to}</td></tr>")
+    parts.append("</tbody>")
+    parts.append("</table>")
+    return "".join(parts)
 
 
 @app.get("/places")
@@ -165,7 +174,10 @@ async def lend_book(request, book_id: int):
     lender = request.headers["HX-Prompt"].encode("ascii", "surrogateescape").decode("latin-1")
     if lender:
         book.lend_to(lender)
-    return f"{book:lend-ui}"
+    return f"""<meta
+        http-equiv="refresh"
+        content="0; url=/books/{book_id}"
+    >"""
 
 
 @app.post("/books/<book_id>/return")

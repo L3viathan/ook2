@@ -66,6 +66,22 @@ class Model:
         ).fetchall():
             yield cls(row["id"])
 
+    @classmethod
+    def all_lent_out(cls, *, order_by="id ASC", page_no=0, page_size=20):
+        cur = conn.cursor()
+        for row in cur.execute(
+            f"""
+            SELECT
+                id
+            FROM {getattr(cls, "table_name", f"{cls.__name__.lower()}s")}
+            WHERE borrowed_to IS NOT NULL
+            ORDER BY {order_by}
+            LIMIT {page_size}
+            OFFSET {page_no * page_size}
+            """
+        ).fetchall():
+            yield cls(row["id"])
+
 
 class Place(Model):
     table_name = "places"
@@ -278,7 +294,7 @@ class Book(Model):
             if self.borrowed_to:
                 return f"""<button
                     class="secondary"
-                    data-tooltip="borrowed to {self.borrowed_to}"
+                    data-tooltip="lent out to {self.borrowed_to}"
                     data-placement="left"
                     hx-confirm="Did {self.borrowed_to} return the book?"
                     hx-post="/books/{self.id}/return"
@@ -368,7 +384,6 @@ class Book(Model):
         conn.commit()
 
     def lend_to(self, borrower):
-        print("attempting lend to", repr(borrower))
         cur = conn.cursor()
         cur.execute(
             f"""
