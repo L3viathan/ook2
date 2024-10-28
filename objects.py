@@ -1,5 +1,6 @@
 import re
 import json
+import random
 from datetime import date, datetime
 import isbnlib
 from isbnlib.registry import bibformatters
@@ -161,9 +162,9 @@ class Book(Model):
     table_name = "books"
 
     colors = [
-        ("#405D72", "black"),
+        ("#405D72", "#cecece"),
         ("#C4DAD2", "black"),
-        ("#B6C4B6", "#CECECE"),
+        ("#B6C4B6", "black"),
         ("#DDDDDD", "#06113C"),
         ("#EEEEEE", "#06113C"),
         ("#D5D5D5", "#091353"),
@@ -176,7 +177,8 @@ class Book(Model):
 
     @property
     def style(self):
-        bg, fg = Book.colors[self.id % len(Book.colors)]
+        # bg, fg = Book.colors[self.id % len(Book.colors)]
+        bg, fg = random.choice(Book.colors)
         return f"color: {fg}; background: {bg};"
 
     def populate(self):
