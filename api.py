@@ -62,18 +62,9 @@ def page(fn):
 @app.get("/")
 @page
 async def index(request):
-    parts = [
-        """<table class="striped">""",
-        "<thead>",
-        "<tr><th>Book</th><th>Lent out to</th></tr>",
-        "</thead>",
-        "<tbody>",
-    ]
-    for book in O.Book.all_lent_out():
-        parts.append(f"{book:table-row:title,borrowed_to}")
-    parts.append("</tbody>")
-    parts.append("</table>")
-    return "".join(parts)
+    return build_table(
+        O.Book.all_lent_out(),
+    )
 
 
 @app.get("/places")
@@ -120,6 +111,49 @@ async def new_place(request):
     """
 
 
+def build_table(
+    books,
+    *,
+    isbn_input_url=None,
+    base_url=None,
+    page_size=PAGE_SIZE,
+    page_no=1,
+):
+    rows = []
+    more_results = False
+    for i, book in enumerate(books):
+        if i == page_size:
+            more_results = True
+        else:
+            rows.append(f"{book:table-row:title,authors,location}")
+    if isbn_input_url:
+        rows.append(f"""
+            <tr><td><input
+                type="text"
+                name="isbn"
+                hx-post="{isbn_input_url}"
+                hx-swap="outerHTML"
+                placeholder="insert ISBN"
+                autofocus
+            ></td></tr>
+        """)
+
+    return f"""
+        <table class="striped">
+        <thead>
+        <tr><th>Book</th><th>Authors</th><th>Location</th></tr>
+        </thead>
+        <tbody>
+        {"".join(rows)}
+        </tbody></table>
+        {pagination(
+            base_url,
+            page_no,
+            more_results=more_results,
+        ) if base_url else ''}
+    """
+
+
 @app.get("/places/<place_id>")
 @page
 async def view_place(request, place_id: int):
@@ -130,35 +164,13 @@ async def view_place(request, place_id: int):
         page_no=page_no - 1,
         page_size=PAGE_SIZE + 1,  # so we know if there would be more results
     )
-    rows = []
-    more_results = False
-    for i, book in enumerate(books):
-        if i == PAGE_SIZE:
-            more_results = True
-        else:
-            rows.append(f"{book:table-row:title}")
 
     return f"""
         {place:heading}
-        <table class="striped">
-        <thead>
-        <tr><th>Book</th></tr>
-        </thead>
-        <tbody>
-        {"".join(rows)}
-        <tr><td><input
-            type="text"
-            name="isbn"
-            hx-post="/places/{place_id}/add-book"
-            hx-swap="outerHTML"
-            placeholder="insert ISBN"
-            autofocus
-        ></td></tr>
-        </tbody></table>
-        {pagination(
-            f"/places/{place_id}",
-            page_no,
-            more_results=more_results,
+        {build_table(
+            books,
+            isbn_input_url=f"/places/{place_id}/add-book",
+            base_url=f"/places/{place_id}",
         )}
     """
 
@@ -318,29 +330,10 @@ async def view_book(request, book_id: int):
 @page
 async def list_books(request):
     page_no = int(request.args.get("page", 1))
-    parts = [
-        """<table class="striped">""",
-        "<thead>",
-        "<tr><th>Book</th><th>Authors</th><th>Location</th></tr>",
-        "</thead>",
-        "<tbody>",
-    ]
-    more_results = False
-    for i, book in enumerate(O.Book.all(
-        order_by="place_id ASC, id DESC",
-        page_no=page_no-1,
-        page_size=PAGE_SIZE + 1,  # so we know if there would be more results
-    )):
-        if i == PAGE_SIZE:
-            more_results = True
-        else:
-            parts.append(f"{book:table-row:title,authors,location}")
-    parts.append("</tbody>")
-    parts.append("</table>")
-    return "".join(parts) + pagination(
-        "/books",
-        page_no,
-        more_results=more_results,
+    return build_table(
+        O.Book.all(page_no=page_no-1, page_size=PAGE_SIZE + 1),
+        base_url="/books",
+        page_no=page_no,
     )
 
 
@@ -354,19 +347,10 @@ async def search_books(request):
         page_no=page_no - 1,
         page_size=PAGE_SIZE + 1,  # so we know if there would be more results
     )
-    parts = []
-    more_results = False
-    for i, book in enumerate(books):
-        if i:
-            parts.append("<br>")
-        if i == PAGE_SIZE:
-            more_results = True
-        else:
-            parts.append(f"{book:full}")
-    return "".join(parts) + pagination(
-        f"/books/search?q={query}",
+    return build_table(
+        books,
+        base_url=f"/books/search?q={query}",
         page_no=page_no,
-        more_results=more_results,
     )
 
 
