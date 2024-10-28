@@ -108,14 +108,14 @@ class Place(Model):
 
     def __format__(self, fmt):
         if fmt == "heading":
-            return f"""<h2
+            return f"""<h3
                 hx-post="/places/{self.id}/rename"
                 hx-swap="outerHTML"
                 hx-trigger="blur delay:500ms"
-                hx-target="closest h2"
-                hx-vals="javascript: name:htmx.find('h2').innerHTML"
+                hx-target="closest h3"
+                hx-vals="javascript: name:htmx.find('h3').innerHTML"
                 contenteditable
-            >{self.name}</h2>"""
+            >{self.name}</h3>"""
         else:
             return f"""<a
                 class="clickable place"
@@ -246,20 +246,19 @@ class Book(Model):
     def __format__(self, fmt):
         if fmt == "heading":
             return f"""
-            <h2>
+            <h3>
             <span
                 hx-post="/books/{self.id}/rename"
                 hx-swap="outerHTML"
                 hx-trigger="blur delay:500ms"
-                hx-target="closest h2"
+                hx-target="closest h3"
                 hx-vals="javascript: title:htmx.find('span').innerHTML"
                 contenteditable
             >{self.title}</span>
             <div role="group">
-                {self:import-ui}
-                {self:lend-ui}
+                {self:import-ui}{self:lend-ui}{self:delete-ui}
             </div>
-            </h2>
+            </h3>
             """
         elif fmt == "import-ui":
             if self.title:
@@ -268,7 +267,13 @@ class Book(Model):
                 class="secondary"
                 hx-post="/books/{self.id}/fetch"
                 hx-swap="outerHTML"
-            >🔎 Fetch</button>"""
+            >🔎<span class="hovershow"> Fetch</span></button>"""
+        elif fmt == "delete-ui":
+            return f"""<button
+                class="error"
+                hx-confirm="Do you really want to delete {self.title}?"
+                hx-delete="/books/{self.id}"
+            >🗑<span class="hovershow"> Delete</span></button>"""
         elif fmt == "lend-ui":
             if self.borrowed_to:
                 return f"""<button
@@ -278,14 +283,14 @@ class Book(Model):
                     hx-confirm="Did {self.borrowed_to} return the book?"
                     hx-post="/books/{self.id}/return"
                     hx-swap="outerHTML"
-                >🫶 Return</button>"""
+                >🫶<span class="hovershow"> Return</span></button>"""
             else:
                 return f"""<button
                     class="secondary"
                     hx-prompt="Who do you want to lend it to?"
                     hx-post="/books/{self.id}/lend"
                     hx-swap="outerHTML"
-                >🫴 Lend</button>"""
+                >🫴<span class="hovershow"> Lend</span></button>"""
         elif fmt == "full":
             return f"""<a
                 class="clickable book-link"
@@ -302,9 +307,14 @@ class Book(Model):
                 parts.append(f"""<div class="alert warning">
                     Currently lent out to <strong>{self.borrowed_to}</strong>.
                 </div>""")
-            parts.append(f"<strong>Author:</strong> {self.authors}")
-            parts.append(f"<strong>ISBN:</strong> {self.isbn}")
-            return "<br>".join(parts)
+            parts.append("<table>")
+            parts.append(f"<tr><td><strong>Title</strong></td><td>{self.title}</td></tr>")
+            parts.append(f"<tr><td><strong>Authors</strong></td><td>{self.authors}</td></tr>")
+            parts.append(f"<tr><td><strong>Publisher</strong></td><td>{self.publisher}</td></tr>")
+            parts.append(f"<tr><td><strong>Year</strong></td><td>{self.year}</td></tr>")
+            parts.append(f"<tr><td><strong>ISBN</strong></td><td>{self.isbn}</td></tr>")
+            parts.append("</table>")
+            return "".join(parts)
 
         else:
             return f"""<a
@@ -318,6 +328,12 @@ class Book(Model):
 
     def __str__(self):
         return f"{self}"
+
+    def delete(self):
+        cur = conn.cursor()
+        cur.execute("DELETE FROM books WHERE id=?", (self.id,))
+        conn.commit()
+        self._cache.pop(self.id)
 
     def rename(self, title):
         cur = conn.cursor()
@@ -351,22 +367,6 @@ class Book(Model):
         )
         conn.commit()
 
-    def get_active_borrow(self):
-        cur = conn.cursor()
-        rows = cur.execute(
-            f"""
-            SELECT id
-            FROM borrows
-            WHERE
-                book_id = {self.id}
-                AND returned_at IS NULL
-            """
-        ).fetchall()
-        if not rows:
-            return None
-        [row] = rows
-        return Borrow(row["id"])
-
     def lend_to(self, borrower):
         print("attempting lend to", repr(borrower))
         cur = conn.cursor()
@@ -378,6 +378,7 @@ class Book(Model):
             """,
             (borrower, self.id),
         )
+        self.borrowed_to = borrower
         conn.commit()
 
     def return_(self):
@@ -390,4 +391,5 @@ class Book(Model):
             """,
             (self.id,),
         )
+        self.borrowed_to = None
         conn.commit()

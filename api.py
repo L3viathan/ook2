@@ -173,7 +173,10 @@ async def lend_book(request, book_id: int):
 async def return_book(request, book_id: int):
     book = O.Book(book_id)
     book.return_()
-    return f"{book:lend-ui}"
+    return f"""<meta
+        http-equiv="refresh"
+        content="0; url=/books/{book_id}"
+    >"""
 
 
 @app.post("/books/<book_id>/fetch")
@@ -181,7 +184,22 @@ async def return_book(request, book_id: int):
 async def fetch_book(request, book_id: int):
     book = O.Book(book_id)
     book.import_metadata()
-    return f"{book:import-ui}"
+    return f"""<meta
+        http-equiv="refresh"
+        content="0; url=/books/{book_id}"
+    >"""
+
+
+@app.delete("/books/<book_id>")
+@fragment
+async def delete_book(request, book_id: int):
+    book = O.Book(book_id)
+    place_id = book.place.id
+    book.delete()
+    return f"""<meta
+        http-equiv="refresh"
+        content="0; url=/places/{place_id}"
+    >"""
 
 
 @app.post("/places/<place_id>/rename")
