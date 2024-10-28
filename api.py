@@ -1,3 +1,5 @@
+import os
+import base64
 import functools
 from datetime import datetime
 from types import CoroutineType
@@ -10,9 +12,58 @@ import objects as O
 
 PAGE_SIZE = 20
 app = Sanic("ook2")
+CORRECT_AUTH = os.environ["OOK_CREDS"]
 
 def D(multival_dict):
     return {key: val[0] for key, val in multival_dict.items()}
+
+
+@app.on_request
+async def extract_auth(request):
+    cookie = request.cookies.get("ook_auth")
+    if cookie == CORRECT_AUTH:
+        request.ctx.authenticated = True
+    else:
+        request.ctx.authenticated = False
+
+
+def authenticated(route):
+    @functools.wraps(route)
+    async def wrapper(request, *args, **kwargs):
+        if not request.ctx.authenticated:
+            print("user was unauthenticated, redirecting")
+            return redirect("/login")
+        else:
+            print("user was authenticated, letting through dangerous route")
+        return await route(request, *args, **kwargs)
+    return wrapper
+
+
+@app.get("/login")
+async def login(request):
+    try:
+        auth = request.headers["Authorization"]
+        _, _, encoded = auth.partition(" ")
+        redirect_url = D(request.args).get("redirect_url", "/")
+        if base64.b64decode(encoded).decode() == CORRECT_AUTH:
+            response = redirect(redirect_url)
+            response.add_cookie(
+                "ook_auth",
+                CORRECT_AUTH,
+                secure=True,
+                httponly=True,
+                samesite="Strict",
+                max_age=60*60*24*365,  # roughly one year
+            )
+            return response
+        else:
+            raise ValueError
+    except (KeyError, AssertionError, ValueError):
+        return HTTPResponse(
+            body="401 Unauthorized",
+            status=401,
+            headers={"WWW-Authenticate": 'Basic realm="Ook! access"'},
+        )
 
 
 def pagination(url, page_no, *, more_results=True):
@@ -31,8 +82,6 @@ def pagination(url, page_no, *, more_results=True):
             {"disabled" if not more_results else ""}
         >&gt;</a>
     """
-
-
 
 
 with open("template.html") as f:
@@ -95,6 +144,7 @@ async def new_place_form(request):
 
 
 @app.post("/places/new")
+@authenticated
 @fragment
 async def new_place(request):
     form = D(request.form)
@@ -176,6 +226,7 @@ async def view_place(request, place_id: int):
 
 
 @app.post("/books/<book_id>/rename")
+@authenticated
 @fragment
 async def rename_book(request, book_id: int):
     book = O.Book(book_id)
@@ -186,6 +237,7 @@ async def rename_book(request, book_id: int):
 
 
 @app.post("/books/<book_id>/lend")
+@authenticated
 @fragment
 async def lend_book(request, book_id: int):
     book = O.Book(book_id)
@@ -199,6 +251,7 @@ async def lend_book(request, book_id: int):
 
 
 @app.post("/books/<book_id>/return")
+@authenticated
 @fragment
 async def return_book(request, book_id: int):
     book = O.Book(book_id)
@@ -210,6 +263,7 @@ async def return_book(request, book_id: int):
 
 
 @app.post("/books/<book_id>/fetch")
+@authenticated
 @fragment
 async def fetch_book(request, book_id: int):
     book = O.Book(book_id)
@@ -221,6 +275,7 @@ async def fetch_book(request, book_id: int):
 
 
 @app.delete("/books/<book_id>")
+@authenticated
 @fragment
 async def delete_book(request, book_id: int):
     book = O.Book(book_id)
@@ -233,6 +288,7 @@ async def delete_book(request, book_id: int):
 
 
 @app.post("/places/<place_id>/rename")
+@authenticated
 @fragment
 async def rename_place(request, place_id: int):
     place = O.Place(place_id)
@@ -243,6 +299,7 @@ async def rename_place(request, place_id: int):
 
 
 @app.post("/places/<place_id>/add-book")
+@authenticated
 @fragment
 async def add_book_by_isbn(request, place_id: int):
     place = O.Place(place_id)
@@ -289,6 +346,7 @@ async def add_book_by_isbn(request, place_id: int):
 
 
 @app.put("/books/<book_id>")
+@authenticated
 @fragment
 async def put_book_data(request, book_id: int):
     data = D(request.form)
