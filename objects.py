@@ -164,6 +164,14 @@ class Book(Model):
         ("#405D72", "black"),
         ("#C4DAD2", "black"),
         ("#B6C4B6", "#CECECE"),
+        ("#DDDDDD", "#06113C"),
+        ("#EEEEEE", "#06113C"),
+        ("#D5D5D5", "#091353"),
+        ("#87A7B3", "#001F3F"),
+        ("#6A9AB0", "#001F3F"),
+        ("#B9E5E8", "#0B192C"),
+        ("#DFF2EB", "#0B192C"),
+        ("#7AB2D3", "#0B192C"),
     ]
 
     @property
