@@ -70,7 +70,7 @@ async def index(request):
         "<tbody>",
     ]
     for book in O.Book.all_lent_out():
-        parts.append(f"<tr><td>{book.title}</td><td>{book.borrowed_to}</td></tr>")
+        parts.append(f"{book:table-row:title,borrowed_to}")
     parts.append("</tbody>")
     parts.append("</table>")
     return "".join(parts)
@@ -130,13 +130,21 @@ async def view_place(request, place_id: int):
         page_no=page_no - 1,
         page_size=PAGE_SIZE + 1,  # so we know if there would be more results
     )
-    parts = []
+    parts = [
+        """<table class="striped">""",
+        "<thead>",
+        "<tr><th>Book</th></tr>",
+        "</thead>",
+        "<tbody>",
+    ]
     more_results = False
     for i, book in enumerate(books):
         if i == PAGE_SIZE:
             more_results = True
         else:
-            parts.append(f"{book}")
+            parts.append(f"{book:table-row:title}")
+    parts.append("</tbody>")
+    parts.append("</table>")
 
     return f"""
         {place:heading}
@@ -148,7 +156,7 @@ async def view_place(request, place_id: int):
             placeholder="insert ISBN"
             autofocus
         >
-        {"<br>".join(parts)}
+        {"".join(parts)}
         {pagination(
             f"/places/{place_id}",
             page_no,

@@ -307,7 +307,14 @@ class Book(Model):
                     hx-post="/books/{self.id}/lend"
                     hx-swap="outerHTML"
                 >🫴<span class="hovershow"> Lend</span></button>"""
-        elif fmt == "full":
+        elif fmt.startswith("table-row"):
+            fields = fmt.partition(":")[-1].split(",")
+            return (
+                "<tr>"
+                + "".join(f"<td>{getattr(self, field) if field != "title" else f'{self:link}'}</td>" for field in fields)
+                + "</tr>"
+            )
+        elif fmt == "link":
             return f"""<a
                 class="clickable book-link"
                 hx-push-url="true"

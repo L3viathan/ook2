@@ -15,10 +15,6 @@ a, .clickable {
 
 .book-link {
   display: inline-block;
-  background-color: #ddeeff;
-  margin: 3px;
-  border: 1px solid #adf;
-  border-radius: 2px;
 }
 
 h3 {
