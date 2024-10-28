@@ -367,3 +367,8 @@ async def style_css(request):
 @app.get("/pico.min.css")
 async def pico_css(request):
     return await file("pico.min.css", mime_type="text/css")
+
+
+@app.get("/logo.svg")
+async def logo_svg(request):
+    return await file("logo.svg", mime_type="image/svg+xml")
