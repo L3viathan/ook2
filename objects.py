@@ -262,7 +262,6 @@ class Book(Model):
     def __format__(self, fmt):
         if fmt == "heading":
             return f"""
-            <h3>
             <span
                 hx-post="/books/{self.id}/rename"
                 hx-swap="outerHTML"
@@ -271,10 +270,12 @@ class Book(Model):
                 hx-vals="javascript: title:htmx.find('span').innerHTML"
                 contenteditable
             >{self.title}</span>
+            """
+        elif fmt == "button-group":
+            return f"""
             <div role="group">
                 {self:import-ui}{self:lend-ui}{self:delete-ui}
             </div>
-            </h3>
             """
         elif fmt == "import-ui":
             if self.title:

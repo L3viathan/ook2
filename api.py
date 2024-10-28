@@ -216,6 +216,7 @@ def build_table(
                 name="isbn"
                 hx-post="{isbn_input_url}"
                 hx-swap="outerHTML"
+                hx-target="closest tr"
                 placeholder="insert ISBN"
                 autofocus
             ></td></tr>
@@ -350,6 +351,7 @@ async def add_book_by_isbn(request, place_id: int):
                 name="isbn"
                 hx-post="/places/{place_id}/add-book"
                 hx-swap="outerHTML"
+                hx-target="closest tr"
                 placeholder="insert ISBN"
                 autofocus
             ></td></tr>
@@ -365,6 +367,7 @@ async def add_book_by_isbn(request, place_id: int):
                 name="isbn"
                 hx-post="/places/{place_id}/add-book"
                 hx-swap="outerHTML"
+                hx-target="closest tr"
                 placeholder="insert ISBN"
                 autofocus
             ></td></tr>
@@ -398,6 +401,7 @@ async def put_book_data(request, book_id: int):
             name="isbn"
             hx-post="/places/{place_id}/add-book"
             hx-swap="outerHTML"
+            hx-target="closest tr"
             placeholder="insert ISBN"
             autofocus
         ></td></tr>
@@ -414,7 +418,11 @@ async def view_book(request, book_id: int):
     return f"""
         <article>
             <header>
-                {book:heading}
+                <h3>{book:heading} {
+                    f"{book:button-group}"
+                    if request.ctx.authenticated
+                    else ""
+                }</h3>
             </header>
             {book:details}
         </article>
