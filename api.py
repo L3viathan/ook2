@@ -53,7 +53,7 @@ async def login(request):
                     class="login"
                     hx-get="/logout"
                     hx-swap="outerHTML"
-                >Log out</button>""",
+                >🚪</button>""",
             )
             response.add_cookie(
                 "ook_auth",
@@ -81,7 +81,7 @@ async def logout(request):
             class="login"
             hx-get="/login"
             hx-swap="outerHTML"
-        >Log in</button>"""
+        >🔑</button>"""
     )
     response.delete_cookie("ook_auth")
     return response
@@ -130,13 +130,13 @@ def page(fn):
                 class="login"
                 hx-get="/logout"
                 hx-swap="outerHTML"
-            >Log out</button>"""
+            >🚪</button>"""
         else:
             login_button = """<button
                 class="login"
                 hx-get="/login"
                 hx-swap="outerHTML"
-            >Log in</button>"""
+            >🔑</button>"""
         return html(TEMPLATE(main=ret, login=login_button))
     return wrapper
 
@@ -154,11 +154,11 @@ async def index(request):
 async def list_places(request):
     return "<br>".join(
         str(place) for place in O.Place.all()
-    ) + """<button
+    ) + ("""<button
         hx-get="/places/new"
         hx-swap="outerHTML"
         class="button-new"
-    >New place</button>"""
+    >New place</button>""" if request.ctx.authenticated else "")
 
 
 @app.get("/places/new")
@@ -247,12 +247,16 @@ async def view_place(request, place_id: int):
         page_no=page_no - 1,
         page_size=PAGE_SIZE + 1,  # so we know if there would be more results
     )
+    if request.ctx.authenticated:
+        isbn_input_url = f"/places/{place_id}/add-book"
+    else:
+        isbn_input_url = ""
 
     return f"""
         {place:heading}
         {build_table(
             books,
-            isbn_input_url=f"/places/{place_id}/add-book",
+            isbn_input_url=isbn_input_url,
             base_url=f"/places/{place_id}",
         )}
     """
