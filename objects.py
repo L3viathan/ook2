@@ -160,6 +160,17 @@ class Book(Model):
     )
     table_name = "books"
 
+    colors = [
+        ("#405D72", "black"),
+        ("#C4DAD2", "black"),
+        ("#B6C4B6", "#CECECE"),
+    ]
+
+    @property
+    def style(self):
+        bg, fg = Book.colors[self.id % len(Book.colors)]
+        return f"color: {fg}; background: {bg};"
+
     def populate(self):
         cur = conn.cursor()
         row = cur.execute(
@@ -315,6 +326,8 @@ class Book(Model):
                 + "".join(f"<td>{getattr(self, field) if field != "title" else f'{self:link}'}</td>" for field in fields)
                 + "</tr>"
             )
+        elif fmt == "spine":
+            return f"""<div class="spine" style="{self.style}">{self.authors} — {self.title}</div>"""
         elif fmt == "link":
             return f"""<a
                 class="clickable book-link"

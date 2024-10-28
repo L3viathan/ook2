@@ -141,3 +141,15 @@ button.login {
   right: 5px;
   transform: scale(0.5);
 }
+
+.spine {
+  border-radius: 3px;
+  writing-mode: sideways-lr;
+  max-height: none;
+  font-size: large;
+  display: inline-block;
+  padding-top: 10px;
+  padding-bottom: 5px;
+  border: 1px solid gray;
+  background: #cecece;
+}

@@ -263,6 +263,21 @@ async def view_place(request, place_id: int):
     """
 
 
+@app.get("/places/<place_id>/viz")
+@page
+async def view_place_viz(request, place_id: int):
+    page_no = int(request.args.get("page", 1))
+    place = O.Place(place_id)
+    books = O.Book.all(
+        place_id=place.id,
+        page_no=page_no - 1,
+        page_size=PAGE_SIZE + 1,  # so we know if there would be more results
+    )
+    return f"""{place:heading} <div class="bookshelf">""" + "".join(
+        f"{book:spine}" for book in books
+    )
+
+
 @app.post("/books/<book_id>/rename")
 @authenticated
 @fragment
