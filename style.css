@@ -134,3 +134,10 @@ article div[role="group"] {
   border-color: #bee5eb;
   color: #0c5460;
 }
+
+button.login {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  transform: scale(0.5);
+}

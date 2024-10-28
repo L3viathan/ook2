@@ -31,8 +31,10 @@ def authenticated(route):
     @functools.wraps(route)
     async def wrapper(request, *args, **kwargs):
         if not request.ctx.authenticated:
-            print("user was unauthenticated, redirecting")
-            return redirect("/login")
+            return HTTPResponse(
+                body="401 Unauthorized",
+                status=401,
+            )
         else:
             print("user was authenticated, letting through dangerous route")
         return await route(request, *args, **kwargs)
@@ -46,7 +48,13 @@ async def login(request):
         _, _, encoded = auth.partition(" ")
         redirect_url = D(request.args).get("redirect_url", "/")
         if base64.b64decode(encoded).decode() == CORRECT_AUTH:
-            response = redirect(redirect_url)
+            response = html(
+                """<button
+                    class="login"
+                    hx-get="/logout"
+                    hx-swap="outerHTML"
+                >Log out</button>""",
+            )
             response.add_cookie(
                 "ook_auth",
                 CORRECT_AUTH,
@@ -64,6 +72,19 @@ async def login(request):
             status=401,
             headers={"WWW-Authenticate": 'Basic realm="Ook! access"'},
         )
+
+
+@app.get("/logout")
+async def logout(request):
+    response = html(
+        """<button
+            class="login"
+            hx-get="/login"
+            hx-swap="outerHTML"
+        >Log in</button>"""
+    )
+    response.delete_cookie("ook_auth")
+    return response
 
 
 def pagination(url, page_no, *, more_results=True):
@@ -100,11 +121,23 @@ def fragment(fn):
 
 def page(fn):
     @functools.wraps(fn)
-    async def wrapper(*args, **kwargs):
-        ret = fn(*args, **kwargs)
+    async def wrapper(request, *args, **kwargs):
+        ret = fn(request, *args, **kwargs)
         if isinstance(ret, CoroutineType):
             ret = await ret
-        return html(TEMPLATE(ret))
+        if request.ctx.authenticated:
+            login_button = """<button
+                class="login"
+                hx-get="/logout"
+                hx-swap="outerHTML"
+            >Log out</button>"""
+        else:
+            login_button = """<button
+                class="login"
+                hx-get="/login"
+                hx-swap="outerHTML"
+            >Log in</button>"""
+        return html(TEMPLATE(main=ret, login=login_button))
     return wrapper
 
 
