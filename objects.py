@@ -415,3 +415,9 @@ class Book(Model):
         )
         self.borrowed_to = None
         conn.commit()
+
+    @property
+    def location(self):
+        if self.borrowed_to:
+            return f"<em>lent to {self.borrowed_to}</em>"
+        return self.place

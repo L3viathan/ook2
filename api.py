@@ -130,33 +130,31 @@ async def view_place(request, place_id: int):
         page_no=page_no - 1,
         page_size=PAGE_SIZE + 1,  # so we know if there would be more results
     )
-    parts = [
-        """<table class="striped">""",
-        "<thead>",
-        "<tr><th>Book</th></tr>",
-        "</thead>",
-        "<tbody>",
-    ]
+    rows = []
     more_results = False
     for i, book in enumerate(books):
         if i == PAGE_SIZE:
             more_results = True
         else:
-            parts.append(f"{book:table-row:title}")
-    parts.append("</tbody>")
-    parts.append("</table>")
+            rows.append(f"{book:table-row:title}")
 
     return f"""
         {place:heading}
-        <input
+        <table class="striped">
+        <thead>
+        <tr><th>Book</th></tr>
+        </thead>
+        <tbody>
+        {"".join(rows)}
+        <tr><td><input
             type="text"
             name="isbn"
             hx-post="/places/{place_id}/add-book"
             hx-swap="outerHTML"
             placeholder="insert ISBN"
             autofocus
-        >
-        {"".join(parts)}
+        ></td></tr>
+        </tbody></table>
         {pagination(
             f"/places/{place_id}",
             page_no,
@@ -241,28 +239,29 @@ async def add_book_by_isbn(request, place_id: int):
         book = O.Book.new_from_isbn(isbn, place_id=place_id)
     except isbnlib.NotValidISBNError:
         return f"""
-            <input
+            <tr><td><input
                 type="text"
                 name="isbn"
                 hx-post="/places/{place_id}/add-book"
                 hx-swap="outerHTML"
                 placeholder="insert ISBN"
                 autofocus
-            >
+            ></td></tr>
             <div hx-swap-oob="beforeend:#notifications">
                 <span class="notification error">Invalid ISBN, try scanning again</span>
             </div>
         """
     if book.title:
         return f"""
-            <input
+            {book:table-row:title}
+            <tr><td><input
                 type="text"
                 name="isbn"
                 hx-post="/places/{place_id}/add-book"
                 hx-swap="outerHTML"
                 placeholder="insert ISBN"
                 autofocus
-            >
+            ></td></tr>
             <div hx-swap-oob="beforeend:#notifications">
                 <span class="notification">Added <em>{book.title}</em></span>
             </div>
@@ -287,14 +286,14 @@ async def put_book_data(request, book_id: int):
     place_id = data["place_id"]
     book.save()
     return f"""
-        <input
+        <tr><td><input
             type="text"
             name="isbn"
             hx-post="/places/{place_id}/add-book"
             hx-swap="outerHTML"
             placeholder="insert ISBN"
             autofocus
-        >
+        ></td></tr>
         <div hx-swap-oob="beforeend:#notifications">
             Added <em>{book.title}</em>
         </div>
@@ -319,26 +318,25 @@ async def view_book(request, book_id: int):
 @page
 async def list_books(request):
     page_no = int(request.args.get("page", 1))
-    parts = []
-    previous_place = object()
+    parts = [
+        """<table class="striped">""",
+        "<thead>",
+        "<tr><th>Book</th><th>Authors</th><th>Location</th></tr>",
+        "</thead>",
+        "<tbody>",
+    ]
     more_results = False
     for i, book in enumerate(O.Book.all(
         order_by="place_id ASC, id DESC",
         page_no=page_no-1,
         page_size=PAGE_SIZE + 1,  # so we know if there would be more results
     )):
-        if book.place != previous_place:
-            if book.place:
-                parts.append(f"<h3>{book.place}</h3>")
-            else:
-                parts.append(f"<h3>unsorted</h3>")
-            previous_place = book.place
-        elif i:
-            parts.append("<br>")
         if i == PAGE_SIZE:
             more_results = True
         else:
-            parts.append(f"{book}")
+            parts.append(f"{book:table-row:title,authors,location}")
+    parts.append("</tbody>")
+    parts.append("</table>")
     return "".join(parts) + pagination(
         "/books",
         page_no,
