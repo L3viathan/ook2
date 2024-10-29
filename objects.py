@@ -14,7 +14,9 @@ def get_first_isbn_match(isbn):
         try:
             if data := bibjson(isbnlib.meta(isbn, service=provider)):
                 break
-        except isbnlib.ISBNNotConsistentError:
+        except isbnlib.NotValidISBNError:
+            raise
+        except Exception:
             continue
     return json.loads(data)
 
