@@ -84,8 +84,8 @@ class Model:
             yield cls(row["id"])
 
 
-class Place(Model):
-    table_name = "places"
+class Collection(Model):
+    table_name = "collections"
     fields = ("name",)
 
     def populate(self):
@@ -94,19 +94,19 @@ class Place(Model):
             """
                 SELECT
                     id, name
-                FROM places
+                FROM collections
                 WHERE id = ?
             """,
             (self.id,),
         ).fetchone()
         if not row:
-            raise ValueError("No Place with this ID found")
+            raise ValueError("No Collection with this ID found")
         self.name = row["name"]
 
     @classmethod
     def new(cls, name):
         cur = conn.cursor()
-        cur.execute("INSERT INTO places (name) VALUES (?)", (name,))
+        cur.execute("INSERT INTO collections (name) VALUES (?)", (name,))
         conn.commit()
         return cls(cur.lastrowid)
 
@@ -114,7 +114,7 @@ class Place(Model):
         cur = conn.cursor()
         cur.execute(
             """
-            UPDATE places
+            UPDATE collections
             SET name=?
             WHERE id = ?
             """,
@@ -126,7 +126,7 @@ class Place(Model):
     def __format__(self, fmt):
         if fmt == "heading":
             return f"""<h3
-                hx-post="/places/{self.id}/rename"
+                hx-post="/collections/{self.id}/rename"
                 hx-swap="outerHTML"
                 hx-trigger="blur delay:500ms"
                 hx-target="closest h3"
@@ -135,9 +135,9 @@ class Place(Model):
             >{self.name}</h3>"""
         else:
             return f"""<a
-                class="clickable place"
+                class="clickable collection"
                 hx-push-url="true"
-                href="/places/{self.id}"
+                href="/collections/{self.id}"
                 hx-select="#container"
                 hx-target="#container"
                 hx-swap="outerHTML"
@@ -157,7 +157,7 @@ class Book(Model):
         "borrowed_to",
         "created_at",
         "imported_at",
-        "place",
+        "collection",
     )
     table_name = "books"
 
@@ -178,9 +178,10 @@ class Book(Model):
     @property
     def style(self):
         bg, fg = Book.colors[int(self.isbn) % len(Book.colors)]
+        pad = int(self.isbn) % 10
         if self.borrowed_to:
-            return "color: black; background: repeating-linear-gradient(45deg, #ffafaf, #ffafaf 10px, white 10px, white 20px);"
-        return f"color: {fg}; background: {bg};"
+            return "color: black; background: repeating-linear-gradient(45deg, #ffafaf, #ffafaf 10px, white 10px, white 20px); padding-left: {pad}px; padding-right: {pad}px;"
+        return f"color: {fg}; background: {bg}; padding-left: {pad}px; padding-right: {pad}px;"
 
     def populate(self):
         cur = conn.cursor()
@@ -202,18 +203,18 @@ class Book(Model):
         self.created_at = row["created_at"]
         self.imported_at = row["imported_at"]
         self.borrowed_to = row["borrowed_to"]
-        if row["place_id"]:
-            self.place = Place(row["place_id"])
+        if row["collection_id"]:
+            self.collection = Collection(row["collection_id"])
         else:
-            self.place = None
+            self.collection = None
 
     @classmethod
-    def new_from_isbn(cls, isbn, place_id=None):
+    def new_from_isbn(cls, isbn, collection_id=None):
         data = bibjson(isbnlib.meta(isbn))
         cur = conn.cursor()
         cur.execute(
-            "INSERT INTO books (isbn, place_id) VALUES (?, ?)",
-            (isbn, place_id),
+            "INSERT INTO books (isbn, collection_id) VALUES (?, ?)",
+            (isbn, collection_id),
         )
         conn.commit()
         book = Book(cur.lastrowid)
@@ -236,15 +237,15 @@ class Book(Model):
             self.save()
 
     @classmethod
-    def search(cls, q, *, page_size=20, page_no=0, place_id=None):
+    def search(cls, q, *, page_size=20, page_no=0, collection_id=None):
         cur = conn.cursor()
         conditions = [
             "UPPER(title) LIKE '%' || ? || '%'"
         ]
         bindings = [q.upper()]
-        if place_id is not None:
-            conditions.append("place_id = ?")
-            bindings.append(place_id)
+        if collection_id is not None:
+            conditions.append("collection_id = ?")
+            bindings.append(collection_id)
         for row in cur.execute(
             f"""
             SELECT
@@ -259,12 +260,12 @@ class Book(Model):
             yield cls(row["id"])
 
     @classmethod
-    def all(cls, *, order_by="id ASC", place_id=None, page_no=0, page_size=20):
+    def all(cls, *, order_by="id ASC", collection_id=None, page_no=0, page_size=20):
         conditions = ["1=1"]
         values = []
-        if place_id is not None:
-            conditions.append("place_id = ?")
-            values.append(place_id)
+        if collection_id is not None:
+            conditions.append("collection_id = ?")
+            values.append(collection_id)
 
         cur = conn.cursor()
         for row in cur.execute(
@@ -358,7 +359,7 @@ class Book(Model):
             parts.append("<table>")
             parts.append(f"<tr><td><strong>Title</strong></td><td>{self.title}</td></tr>")
             parts.append(f"<tr><td><strong>Authors</strong></td><td>{self.authors}</td></tr>")
-            parts.append(f"<tr><td><strong>Place</strong></td><td>{self.place}</td></tr>")
+            parts.append(f"<tr><td><strong>Collection</strong></td><td>{self.collection}</td></tr>")
             parts.append(f"<tr><td><strong>Publisher</strong></td><td>{self.publisher}</td></tr>")
             parts.append(f"<tr><td><strong>Year</strong></td><td>{self.year}</td></tr>")
             parts.append(f"<tr><td><strong>ISBN</strong></td><td>{self.isbn}</td></tr>")
@@ -446,4 +447,4 @@ class Book(Model):
     def location(self):
         if self.borrowed_to:
             return f"<em>lent to {self.borrowed_to}</em>"
-        return self.place
+        return self.collection

@@ -149,47 +149,47 @@ async def index(request):
     )
 
 
-@app.get("/places")
+@app.get("/collections")
 @page
-async def list_places(request):
+async def list_collections(request):
     return "<br>".join(
-        str(place) for place in O.Place.all()
+        str(collection) for collection in O.Collection.all()
     ) + ("""<button
-        hx-get="/places/new"
+        hx-get="/collections/new"
         hx-swap="outerHTML"
         class="button-new"
-    >New place</button>""" if request.ctx.authenticated else "")
+    >New collection</button>""" if request.ctx.authenticated else "")
 
 
-@app.get("/places/new")
+@app.get("/collections/new")
 @fragment
-async def new_place_form(request):
+async def new_collection_form(request):
     return """
         <form
-            hx-post="/places/new"
+            hx-post="/collections/new"
             hx-swap="outerHTML"
             hx-encoding="multipart/form-data"
         >
-            <input name="name" placeholder="name"></input>
+            <input name="name" collectionholder="name"></input>
             <button type="submit">»</button>
         </form>
     """
 
 
-@app.post("/places/new")
+@app.post("/collections/new")
 @authenticated
 @fragment
-async def new_place(request):
+async def new_collection(request):
     form = D(request.form)
     name = form["name"]
-    place = O.Place.new(name)
+    collection = O.Collection.new(name)
     return f"""
         <button
-            hx-get="/places/new"
+            hx-get="/collections/new"
             hx-swap="outerHTML"
             class="button-new"
-        >New place</button>
-        {place}
+        >New collection</button>
+        {collection}
         <br>
     """
 
@@ -217,7 +217,7 @@ def build_table(
                 hx-post="{isbn_input_url}"
                 hx-swap="outerHTML"
                 hx-target="closest tr"
-                placeholder="insert ISBN"
+                collectionholder="insert ISBN"
                 autofocus
             ></td></tr>
         """)
@@ -238,42 +238,42 @@ def build_table(
     """
 
 
-@app.get("/places/<place_id>")
+@app.get("/collections/<collection_id>")
 @page
-async def view_place(request, place_id: int):
+async def view_collection(request, collection_id: int):
     page_no = int(request.args.get("page", 1))
-    place = O.Place(place_id)
+    collection = O.Collection(collection_id)
     books = O.Book.all(
-        place_id=place.id,
+        collection_id=collection.id,
         page_no=page_no - 1,
         page_size=PAGE_SIZE + 1,  # so we know if there would be more results
     )
     if request.ctx.authenticated:
-        isbn_input_url = f"/places/{place_id}/add-book"
+        isbn_input_url = f"/collections/{collection_id}/add-book"
     else:
         isbn_input_url = ""
 
     return f"""
-        {place:heading}
+        {collection:heading}
         {build_table(
             books,
             isbn_input_url=isbn_input_url,
-            base_url=f"/places/{place_id}",
+            base_url=f"/collections/{collection_id}",
         )}
     """
 
 
-@app.get("/places/<place_id>/viz")
+@app.get("/collections/<collection_id>/viz")
 @page
-async def view_place_viz(request, place_id: int):
+async def view_collection_viz(request, collection_id: int):
     page_no = int(request.args.get("page", 1))
-    place = O.Place(place_id)
+    collection = O.Collection(collection_id)
     books = O.Book.all(
-        place_id=place.id,
+        collection_id=collection.id,
         page_no=page_no - 1,
         page_size=PAGE_SIZE + 1,  # so we know if there would be more results
     )
-    return f"""{place:heading} <div class="bookshelf">""" + "".join(
+    return f"""{collection:heading} <div class="bookshelf">""" + "".join(
         f"{book:spine}" for book in books
     )
 
@@ -332,42 +332,42 @@ async def fetch_book(request, book_id: int):
 @fragment
 async def delete_book(request, book_id: int):
     book = O.Book(book_id)
-    place_id = book.place.id
+    collection_id = book.collection.id
     book.delete()
     return f"""<meta
         http-equiv="refresh"
-        content="0; url=/places/{place_id}"
+        content="0; url=/collections/{collection_id}"
     >"""
 
 
-@app.post("/places/<place_id>/rename")
+@app.post("/collections/<collection_id>/rename")
 @authenticated
 @fragment
-async def rename_place(request, place_id: int):
-    place = O.Place(place_id)
+async def rename_collection(request, collection_id: int):
+    collection = O.Collection(collection_id)
     name = D(request.form)["name"]
     if name:
-        place.rename(name)
-    return f"{place:heading}"
+        collection.rename(name)
+    return f"{collection:heading}"
 
 
-@app.post("/places/<place_id>/add-book")
+@app.post("/collections/<collection_id>/add-book")
 @authenticated
 @fragment
-async def add_book_by_isbn(request, place_id: int):
-    place = O.Place(place_id)
+async def add_book_by_isbn(request, collection_id: int):
+    collection = O.Collection(collection_id)
     isbn = D(request.form)["isbn"]
     try:
-        book = O.Book.new_from_isbn(isbn, place_id=place_id)
+        book = O.Book.new_from_isbn(isbn, collection_id=collection_id)
     except isbnlib.NotValidISBNError:
         return f"""
             <tr><td><input
                 type="text"
                 name="isbn"
-                hx-post="/places/{place_id}/add-book"
+                hx-post="/collections/{collection_id}/add-book"
                 hx-swap="outerHTML"
                 hx-target="closest tr"
-                placeholder="insert ISBN"
+                collectionholder="insert ISBN"
                 autofocus
             ></td></tr>
             <div hx-swap-oob="beforeend:#notifications">
@@ -380,10 +380,10 @@ async def add_book_by_isbn(request, place_id: int):
             <tr><td><input
                 type="text"
                 name="isbn"
-                hx-post="/places/{place_id}/add-book"
+                hx-post="/collections/{collection_id}/add-book"
                 hx-swap="outerHTML"
                 hx-target="closest tr"
-                placeholder="insert ISBN"
+                collectionholder="insert ISBN"
                 autofocus
             ></td></tr>
             <div hx-swap-oob="beforeend:#notifications">
@@ -392,9 +392,9 @@ async def add_book_by_isbn(request, place_id: int):
         """
     return f"""
         <form hx-put="/books/{book.id}">
-            <input type="hidden" name="place_id" value="{place_id}">
-            <label>Title <input name="title" placeholder="Title" required></label>
-            <label>Author <input name="author" placeholder="Author"></label>
+            <input type="hidden" name="collection_id" value="{collection_id}">
+            <label>Title <input name="title" collectionholder="Title" required></label>
+            <label>Author <input name="author" collectionholder="Author"></label>
             <button type="submit">»</button>
         </form>
     """
@@ -408,16 +408,16 @@ async def put_book_data(request, book_id: int):
     book = O.Book(book_id)
     book.title = data["title"]
     book.author = data["author"]
-    place_id = data["place_id"]
+    collection_id = data["collection_id"]
     book.save()
     return f"""
         <tr><td><input
             type="text"
             name="isbn"
-            hx-post="/places/{place_id}/add-book"
+            hx-post="/collections/{collection_id}/add-book"
             hx-swap="outerHTML"
             hx-target="closest tr"
-            placeholder="insert ISBN"
+            collectionholder="insert ISBN"
             autofocus
         ></td></tr>
         <div hx-swap-oob="beforeend:#notifications">

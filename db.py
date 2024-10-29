@@ -67,3 +67,11 @@ def initial(cur):
             FOREIGN KEY(place_id) REFERENCES places(id)
         )
     """)
+
+@migration(1)
+def rename_places_to_collections(cur):
+    cur.execute("""ALTER TABLE places RENAME TO collections""")
+
+@migration(2)
+def rename_place_id_to_collection_id(cur):
+    cur.execute("""ALTER TABLE books RENAME COLUMN place_id TO collection_id""")
