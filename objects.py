@@ -132,7 +132,8 @@ class Collection(Model):
                 hx-target="closest h3"
                 hx-vals="javascript: name:htmx.find('h3').innerHTML"
                 contenteditable
-            >{self.name}</h3>"""
+            >{self.name}</h3>
+            """
         else:
             return f"""<a
                 class="clickable collection"
@@ -339,7 +340,12 @@ class Book(Model):
                 + "</tr>"
             )
         elif fmt == "spine":
-            return f"""<a href="/books/{self.id}" class="spine" style="{self.style}">{self.authors} — {self.title}</a>"""
+            return f"""<a
+                href="/books/{self.id}"
+                class="spine"
+                style="{self.style}"
+                {f'data-tooltip="borrowed to {self.borrowed_to}"' if self.borrowed_to else ""}
+            >{self.authors} — {self.title}</a>"""
         elif fmt == "link":
             return f"""<a
                 class="clickable book-link"

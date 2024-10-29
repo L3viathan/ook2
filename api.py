@@ -19,12 +19,16 @@ def D(multival_dict):
 
 
 @app.on_request
-async def extract_auth(request):
+async def read_cookies(request):
     cookie = request.cookies.get("ook_auth")
     if cookie == CORRECT_AUTH:
         request.ctx.authenticated = True
     else:
         request.ctx.authenticated = False
+    if request.cookies.get("prefers_shelf"):
+        request.ctx.prefers_shelf = True
+    else:
+        request.ctx.prefers_shelf = False
 
 
 def authenticated(route):
@@ -238,6 +242,36 @@ def build_table(
     """
 
 
+def view_toggle_for(url, *, state=False):
+    return f"""<label style="float: right;"><input
+        type="checkbox"
+        role="switch"
+        hx-post="/view?prefer={"off" if state else "on"}&redirect_url={url}"
+        {"checked" if state else ""}
+    >📚</label>"""
+
+
+@app.post("/view")
+async def set_view_pref(request):
+    redirect_url = request.args.get("redirect_url", "/")
+    response = html(f"""<meta
+        http-equiv="refresh"
+        content="0; url={redirect_url}"
+    >""")
+    if request.args.get("prefer") == "on":
+        response.add_cookie(
+            "prefers_shelf",
+            "on",
+            secure=True,
+            httponly=True,
+            samesite="Strict",
+            max_age=60*60*24*365,  # roughly one year
+        )
+    else:
+        response.delete_cookie("prefers_shelf")
+    return response
+
+
 @app.get("/collections/<collection_id>")
 @page
 async def view_collection(request, collection_id: int):
@@ -255,27 +289,21 @@ async def view_collection(request, collection_id: int):
 
     return f"""
         {collection:heading}
-        {build_table(
+        {view_toggle_for(
+            f"/collections/{collection_id}",
+            state=request.ctx.prefers_shelf,
+        )}
+        {(
+            """<div class="bookshelf">""" + "".join(
+                f"{book:spine}" for book in books
+            )
+            + "</div>"
+        ) if request.ctx.prefers_shelf else build_table(
             books,
             isbn_input_url=isbn_input_url,
             base_url=f"/collections/{collection_id}",
         )}
     """
-
-
-@app.get("/collections/<collection_id>/viz")
-@page
-async def view_collection_viz(request, collection_id: int):
-    page_no = int(request.args.get("page", 1))
-    collection = O.Collection(collection_id)
-    books = O.Book.all(
-        collection_id=collection.id,
-        page_no=page_no - 1,
-        page_size=PAGE_SIZE + 1,  # so we know if there would be more results
-    )
-    return f"""{collection:heading} <div class="bookshelf">""" + "".join(
-        f"{book:spine}" for book in books
-    )
 
 
 @app.post("/books/<book_id>/rename")
