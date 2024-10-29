@@ -177,8 +177,9 @@ class Book(Model):
 
     @property
     def style(self):
-        # bg, fg = Book.colors[self.id % len(Book.colors)]
-        bg, fg = random.choice(Book.colors)
+        bg, fg = Book.colors[int(self.isbn) % len(Book.colors)]
+        if self.borrowed_to:
+            return "opacity: 0.5; background: red; color: white;"
         return f"color: {fg}; background: {bg};"
 
     def populate(self):
@@ -337,7 +338,7 @@ class Book(Model):
                 + "</tr>"
             )
         elif fmt == "spine":
-            return f"""<div class="spine" style="{self.style}">{self.authors} — {self.title}</div>"""
+            return f"""<a href="/books/{self.id}" class="spine" style="{self.style}">{self.authors} — {self.title}</a>"""
         elif fmt == "link":
             return f"""<a
                 class="clickable book-link"
