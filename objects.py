@@ -9,6 +9,12 @@ from db import conn
 
 bibjson = bibformatters["json"]
 
+def get_first_isbn_match(isbn):
+    for provider in ("goob", "openl", "wiki"):
+        if data := bibjson(isbnlib.meta(isbn, service=provider)):
+            break
+    return json.loads(data)
+
 UNSET = object()
 class lazy:
     def __init__(self, name):
@@ -211,7 +217,7 @@ class Book(Model):
 
     @classmethod
     def new_from_isbn(cls, isbn, collection_id=None):
-        data = bibjson(isbnlib.meta(isbn))
+        data = get_first_isbn_match(isbn)
         cur = conn.cursor()
         cur.execute(
             "INSERT INTO books (isbn, collection_id) VALUES (?, ?)",
@@ -224,9 +230,8 @@ class Book(Model):
         return book
 
     def import_metadata(self, data=None):
-        data = data or bibjson(isbnlib.meta(self.isbn))
+        data = data or get_first_isbn_match(self.isbn)
         if data:
-            data = json.loads(data)
             self.title = data.get("title")
             print(data)
             self.authors = ", ".join(
