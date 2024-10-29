@@ -11,8 +11,11 @@ bibjson = bibformatters["json"]
 
 def get_first_isbn_match(isbn):
     for provider in ("goob", "openl", "wiki"):
-        if data := bibjson(isbnlib.meta(isbn, service=provider)):
-            break
+        try:
+            if data := bibjson(isbnlib.meta(isbn, service=provider)):
+                break
+        except isbnlib.ISBNNotConsistentError:
+            continue
     return json.loads(data)
 
 UNSET = object()
