@@ -39,8 +39,6 @@ def authenticated(route):
                 body="401 Unauthorized",
                 status=401,
             )
-        else:
-            print("user was authenticated, letting through dangerous route")
         return await route(request, *args, **kwargs)
     return wrapper
 
@@ -322,8 +320,8 @@ async def view_collection(request, collection_id: int):
     collection = O.Collection(collection_id)
     books = O.Book.all(
         collection_id=collection.id,
-        page_no=page_no - 1,
-        page_size=PAGE_SIZE + 1,  # so we know if there would be more results
+        offset=PAGE_SIZE * (page_no - 1),
+        limit=PAGE_SIZE + 1,  # so we know if there would be more results
     )
     if request.ctx.authenticated:
         isbn_input_url = f"/collections/{collection_id}/add-book"
@@ -340,10 +338,12 @@ async def view_collection(request, collection_id: int):
             books,
             isbn_input_url=isbn_input_url,
             base_url=f"/collections/{collection_id}",
+            page_no=page_no,
         ) if request.ctx.prefers_shelf else build_table(
             books,
             isbn_input_url=isbn_input_url,
             base_url=f"/collections/{collection_id}",
+            page_no=page_no,
         )}
     """
 
@@ -497,7 +497,10 @@ async def view_book(request, book_id: int):
 async def list_books(request):
     page_no = int(request.args.get("page", 1))
     return build_table(
-        O.Book.all(page_no=page_no-1, page_size=PAGE_SIZE + 1),
+        O.Book.all(
+            offset=PAGE_SIZE * (page_no - 1),
+            limit=PAGE_SIZE + 1,  # so we know if there would be more results
+        ),
         base_url="/books",
         page_no=page_no,
     )
