@@ -358,6 +358,7 @@ class Book(Model):
             parts.append("<table>")
             parts.append(f"<tr><td><strong>Title</strong></td><td>{self.title}</td></tr>")
             parts.append(f"<tr><td><strong>Authors</strong></td><td>{self.authors}</td></tr>")
+            parts.append(f"<tr><td><strong>Place</strong></td><td>{self.place}</td></tr>")
             parts.append(f"<tr><td><strong>Publisher</strong></td><td>{self.publisher}</td></tr>")
             parts.append(f"<tr><td><strong>Year</strong></td><td>{self.year}</td></tr>")
             parts.append(f"<tr><td><strong>ISBN</strong></td><td>{self.isbn}</td></tr>")
