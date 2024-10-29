@@ -174,7 +174,7 @@ async def new_collection_form(request):
             hx-swap="outerHTML"
             hx-encoding="multipart/form-data"
         >
-            <input name="name" collectionholder="name"></input>
+            <input name="name" placeholder="name"></input>
             <button type="submit">»</button>
         </form>
     """
@@ -198,6 +198,59 @@ async def new_collection(request):
     """
 
 
+def build_shelf(
+    books,
+    *,
+    isbn_input_url=None,
+    base_url=None,
+    page_size=PAGE_SIZE,
+    page_no=1,
+):
+    parts = ["""<div class="bookshelf">"""]
+    more_results = False
+    for i, book in enumerate(books):
+        if i == page_size:
+            more_results = True
+        else:
+            parts.append(f"{book:spine}")
+    if isbn_input_url:
+        parts.append(build_isbn_input(isbn_input_url, mode="shelf"))
+    parts.append("</div>")
+    if base_url:
+        parts.append(pagination(
+            base_url,
+            page_no,
+            more_results=more_results,
+        ))
+    return "".join(parts)
+
+
+def build_isbn_input(isbn_input_url, mode="table"):
+    if mode == "shelf":
+        return f"""
+            <input
+                type="text"
+                name="isbn"
+                hx-post="{isbn_input_url}"
+                hx-swap="outerHTML"
+                placeholder="insert ISBN"
+                autofocus
+            >
+        """
+    else:
+        return f"""
+            <tr><td colspan=3><input
+                type="text"
+                name="isbn"
+                hx-post="{isbn_input_url}"
+                hx-swap="outerHTML"
+                hx-target="closest tr"
+                placeholder="insert ISBN"
+                autofocus
+            ></td></tr>
+        """
+
+
 def build_table(
     books,
     *,
@@ -214,17 +267,7 @@ def build_table(
         else:
             rows.append(f"{book:table-row:title,authors,location}")
     if isbn_input_url:
-        rows.append(f"""
-            <tr><td><input
-                type="text"
-                name="isbn"
-                hx-post="{isbn_input_url}"
-                hx-swap="outerHTML"
-                hx-target="closest tr"
-                collectionholder="insert ISBN"
-                autofocus
-            ></td></tr>
-        """)
+        rows.append(build_isbn_input(isbn_input_url, mode="table"))
 
     return f"""
         <table class="striped">
@@ -293,11 +336,10 @@ async def view_collection(request, collection_id: int):
             f"/collections/{collection_id}",
             state=request.ctx.prefers_shelf,
         )}
-        {(
-            """<div class="bookshelf">""" + "".join(
-                f"{book:spine}" for book in books
-            )
-            + "</div>"
+        {build_shelf(
+            books,
+            isbn_input_url=isbn_input_url,
+            base_url=f"/collections/{collection_id}",
         ) if request.ctx.prefers_shelf else build_table(
             books,
             isbn_input_url=isbn_input_url,
@@ -385,19 +427,12 @@ async def rename_collection(request, collection_id: int):
 async def add_book_by_isbn(request, collection_id: int):
     collection = O.Collection(collection_id)
     isbn = D(request.form)["isbn"]
+    display = "shelf" if request.ctx.prefers_shelf else "table"
     try:
         book = O.Book.new_from_isbn(isbn, collection_id=collection_id)
     except isbnlib.NotValidISBNError:
         return f"""
-            <tr><td><input
-                type="text"
-                name="isbn"
-                hx-post="/collections/{collection_id}/add-book"
-                hx-swap="outerHTML"
-                hx-target="closest tr"
-                collectionholder="insert ISBN"
-                autofocus
-            ></td></tr>
+            {build_isbn_input(f"/collections/{collection_id}/add-book", mode=display)}
             <div hx-swap-oob="beforeend:#notifications">
                 <span class="notification error">Invalid ISBN, try scanning again</span>
             </div>
@@ -405,15 +440,7 @@ async def add_book_by_isbn(request, collection_id: int):
     if book.title:
         return f"""
             {book:table-row:title}
-            <tr><td><input
-                type="text"
-                name="isbn"
-                hx-post="/collections/{collection_id}/add-book"
-                hx-swap="outerHTML"
-                hx-target="closest tr"
-                collectionholder="insert ISBN"
-                autofocus
-            ></td></tr>
+            {build_isbn_input(f"/collections/{collection_id}/add-book", mode=display)}
             <div hx-swap-oob="beforeend:#notifications">
                 <span class="notification">Added <em>{book.title}</em></span>
             </div>
@@ -421,8 +448,8 @@ async def add_book_by_isbn(request, collection_id: int):
     return f"""
         <form hx-put="/books/{book.id}">
             <input type="hidden" name="collection_id" value="{collection_id}">
-            <label>Title <input name="title" collectionholder="Title" required></label>
-            <label>Author <input name="author" collectionholder="Author"></label>
+            <label>Title <input name="title" placeholder="Title" required></label>
+            <label>Author <input name="author" placeholder="Author"></label>
             <button type="submit">»</button>
         </form>
     """
@@ -438,16 +465,9 @@ async def put_book_data(request, book_id: int):
     book.author = data["author"]
     collection_id = data["collection_id"]
     book.save()
+    display = "shelf" if request.ctx.prefers_shelf else "table"
     return f"""
-        <tr><td><input
-            type="text"
-            name="isbn"
-            hx-post="/collections/{collection_id}/add-book"
-            hx-swap="outerHTML"
-            hx-target="closest tr"
-            collectionholder="insert ISBN"
-            autofocus
-        ></td></tr>
+        {build_isbn_input(f"/collections/{collection_id}/add-book", mode=display)}
         <div hx-swap-oob="beforeend:#notifications">
             Added <em>{book.title}</em>
         </div>
