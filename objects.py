@@ -179,7 +179,7 @@ class Book(Model):
     def style(self):
         bg, fg = Book.colors[int(self.isbn) % len(Book.colors)]
         if self.borrowed_to:
-            return "opacity: 0.5; background: red; color: white;"
+            return "color: black; background: repeating-linear-gradient(45deg, #ffafaf, #ffafaf 10px, white 10px, white 20px);"
         return f"color: {fg}; background: {bg};"
 
     def populate(self):
