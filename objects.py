@@ -344,7 +344,6 @@ class Book(Model):
                 href="/books/{self.id}"
                 class="spine"
                 style="{self.style}"
-                {f'data-tooltip="borrowed to {self.borrowed_to}"' if self.borrowed_to else ""}
             >{self.authors} — {self.title}</a>"""
         elif fmt == "link":
             return f"""<a
