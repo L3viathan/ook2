@@ -334,11 +334,14 @@ class Book(Model):
                 >🫴<span class="hovershow"> Lend</span></button>"""
         elif fmt.startswith("table-row"):
             fields = fmt.partition(":")[-1].split(",")
-            return (
-                "<tr>"
-                + "".join(f"<td>{getattr(self, field) if field != "title" else f'{self:link}'}</td>" for field in fields)
-                + "</tr>"
-            )
+            parts = ["<tr>"]
+            for field in fields:
+                if field == "title":
+                    parts.append(f"<td>{self:link}</td>")
+                else:
+                    parts.append(f"<td>{getattr(self, field)}</td>")
+            parts.append("</tr>")
+            return "".join(parts)
         elif fmt == "spine":
             return f"""<a
                 href="/books/{self.id}"
