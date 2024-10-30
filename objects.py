@@ -19,7 +19,7 @@ def get_first_isbn_match(isbn):
             raise
         except Exception:
             continue
-    return json.loads(data)
+    return json.loads(data) if isinstance(data, str) else data
 
 UNSET = object()
 class lazy:
