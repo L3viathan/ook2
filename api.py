@@ -10,7 +10,7 @@ from sanic import Sanic, HTTPResponse, html, file, redirect
 import objects as O
 
 
-PAGE_SIZE = 20
+PAGE_SIZE = 30
 app = Sanic("ook2")
 CORRECT_AUTH = os.environ["OOK_CREDS"]
 
@@ -438,6 +438,11 @@ async def add_book_by_isbn(request, collection_id: int):
             </div>
         """
     if book.title:
+        book_repr = (
+            f"{book:table-row:title,authors,location}"
+            if display == "table"
+            else f"{book:spine}"
+        )
         return f"""
             {book:table-row:title}
             {build_isbn_input(f"/collections/{collection_id}/add-book", mode=display)}
@@ -462,7 +467,7 @@ async def put_book_data(request, book_id: int):
     data = D(request.form)
     book = O.Book(book_id)
     book.title = data["title"]
-    book.author = data["author"]
+    book.authors = data["author"]
     collection_id = data["collection_id"]
     book.save()
     display = "shelf" if request.ctx.prefers_shelf else "table"
