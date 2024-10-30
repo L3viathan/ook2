@@ -302,7 +302,6 @@ class Book(Model):
                 hx-post="/books/{self.id}/rename"
                 hx-swap="outerHTML"
                 hx-trigger="blur delay:500ms"
-                hx-target="closest h3"
                 hx-vals="javascript: title:htmx.find('span').innerHTML"
                 contenteditable
             >{self.title}</span>
