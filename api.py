@@ -205,14 +205,14 @@ def build_shelf(
     page_no=1,
 ):
     parts = ["""<div class="bookshelf">"""]
+    if isbn_input_url:
+        parts.append(build_isbn_input(isbn_input_url, mode="shelf"))
     more_results = False
     for i, book in enumerate(books):
         if i == page_size:
             more_results = True
         else:
             parts.append(f"{book:spine}")
-    if isbn_input_url:
-        parts.append(build_isbn_input(isbn_input_url, mode="shelf"))
     parts.append("</div>")
     if base_url:
         parts.append(pagination(
@@ -225,16 +225,14 @@ def build_shelf(
 
 def build_isbn_input(isbn_input_url, mode="table"):
     if mode == "shelf":
-        return f"""
-            <input
-                type="text"
-                name="isbn"
-                hx-post="{isbn_input_url}"
-                hx-swap="outerHTML"
-                placeholder="insert ISBN"
-                autofocus
-            >
-        """
+        return f"""<input
+            type="text"
+            name="isbn"
+            hx-post="{isbn_input_url}"
+            hx-swap="outerHTML"
+            placeholder="insert ISBN"
+            autofocus
+        >"""
     else:
         return f"""
             <tr><td colspan=3><input
@@ -259,13 +257,13 @@ def build_table(
 ):
     rows = []
     more_results = False
+    if isbn_input_url:
+        rows.append(build_isbn_input(isbn_input_url, mode="table"))
     for i, book in enumerate(books):
         if i == page_size:
             more_results = True
         else:
             rows.append(f"{book:table-row:title,authors,location}")
-    if isbn_input_url:
-        rows.append(build_isbn_input(isbn_input_url, mode="table"))
 
     return f"""
         <table class="striped">
@@ -284,7 +282,7 @@ def build_table(
 
 
 def view_toggle_for(url, *, state=False):
-    return f"""<label style="float: right;"><input
+    return f"""<label class="view-toggle"><input
         type="checkbox"
         role="switch"
         hx-post="/view?prefer={"off" if state else "on"}&redirect_url={url}"
@@ -444,8 +442,8 @@ async def add_book_by_isbn(request, collection_id: int):
             else f"{book:spine}"
         )
         return f"""
-            {book_repr}
             {build_isbn_input(f"/collections/{collection_id}/add-book", mode=display)}
+            {book_repr}
             <div hx-swap-oob="beforeend:#notifications">
                 <span class="notification">Added <em>{book.title}</em></span>
             </div>
@@ -471,12 +469,9 @@ async def put_book_data(request, book_id: int):
     collection_id = data["collection_id"]
     book.save()
     display = "shelf" if request.ctx.prefers_shelf else "table"
-    return f"""
-        {build_isbn_input(f"/collections/{collection_id}/add-book", mode=display)}
-        <div hx-swap-oob="beforeend:#notifications">
-            Added <em>{book.title}</em>
-        </div>
-    """
+    return f"""{build_isbn_input(f"/collections/{collection_id}/add-book", mode=display)}<div
+        hx-swap-oob="beforeend:#notifications"
+        >Added <em>{book.title}</em></div>"""
 
 
 @app.get("/books/<book_id>")

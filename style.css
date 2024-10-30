@@ -162,3 +162,9 @@ button.login {
   transform: perspective(100px) translateZ(10px);
   box-shadow: 0px -5px 10px gray;
 }
+
+.view-toggle {
+  position: absolute;
+  right: 110px;
+  top: 32px;
+}
