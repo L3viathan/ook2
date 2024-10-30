@@ -10,6 +10,7 @@ from db import conn
 bibjson = bibformatters["json"]
 
 def get_first_isbn_match(isbn):
+    data = {}
     for provider in ("goob", "openl", "wiki"):
         try:
             if data := bibjson(isbnlib.meta(isbn, service=provider)):
