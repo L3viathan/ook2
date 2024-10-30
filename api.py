@@ -444,7 +444,7 @@ async def add_book_by_isbn(request, collection_id: int):
             else f"{book:spine}"
         )
         return f"""
-            {book:table-row:title}
+            {book_repr}
             {build_isbn_input(f"/collections/{collection_id}/add-book", mode=display)}
             <div hx-swap-oob="beforeend:#notifications">
                 <span class="notification">Added <em>{book.title}</em></span>
