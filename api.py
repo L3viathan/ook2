@@ -10,7 +10,7 @@ from sanic import Sanic, HTTPResponse, html, file, redirect
 import objects as O
 
 
-PAGE_SIZE = 30
+PAGE_SIZE = 100
 app = Sanic("ook2")
 CORRECT_AUTH = os.environ["OOK_CREDS"]
 
