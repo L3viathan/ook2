@@ -155,7 +155,7 @@ async def index(request):
 @page
 async def list_collections(request):
     return "<br>".join(
-        str(collection) for collection in O.Collection.all()
+        str(collection) for collection in O.Collection.all(order_by="name COLLATE NOCASE ASC")
     ) + ("""<button
         hx-get="/collections/new"
         hx-swap="outerHTML"
