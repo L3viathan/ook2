@@ -190,9 +190,10 @@ class Book(Model):
 
     @property
     def style(self):
-        bg, fg = Book.colors[int(self.isbn) % len(Book.colors)]
-        pad = int(self.isbn) % 10
-        mh = random.randint(350, 450)
+        random_state = int(self.isbn)
+        bg, fg = Book.colors[random_state % len(Book.colors)]
+        pad = random_state % 10
+        mh = random_state % 100 + 350
         if self.borrowed_to:
             return "color: black; background: repeating-linear-gradient(45deg, #ffafaf, #ffafaf 10px, white 10px, white 20px); padding-left: {pad}px; padding-right: {pad}px; max-height: {mh}px;"
         return f"color: {fg}; background: {bg}; padding-left: {pad}px; padding-right: {pad}px; max-height: {mh}px;"
