@@ -208,11 +208,20 @@ def build_shelf(
     if isbn_input_url:
         parts.append(build_isbn_input(isbn_input_url, mode="shelf"))
     more_results = False
+    last_letter = None
     for i, book in enumerate(books):
+        did_index = False
         if i == page_size:
             more_results = True
         else:
+            letter = book.index_letter
+            if letter != last_letter and i:
+                parts.append(f"""<span class="nobreak"><div class="index"><span>{letter}</span></div>""")
+                did_index = True
+            last_letter = letter
             parts.append(f"{book:spine}")
+            if did_index:
+                parts.append("</span>")
     parts.append("</div>")
     if base_url:
         parts.append(pagination(
@@ -496,14 +505,31 @@ async def view_book(request, book_id: int):
 @page
 async def list_books(request):
     page_no = int(request.args.get("page", 1))
-    return build_table(
-        O.Book.all(
-            offset=PAGE_SIZE * (page_no - 1),
-            limit=PAGE_SIZE + 1,  # so we know if there would be more results
-        ),
-        base_url="/books",
-        page_no=page_no,
+    books = O.Book.all(
+        offset=PAGE_SIZE * (page_no - 1),
+        limit=PAGE_SIZE + 1,  # so we know if there would be more results
+        # TODO: this isn't perfect, and it's complicated. Maybe we want to
+        # store a sort_key instead, which we can decide on in Python-land. This
+        # will also allow more complicated handlings of e.g. sorting by title
+        # when authors are identical, omitting "The", "A", etc., and whatever
+        # else we might want.
+        order_by="authors ASC",
     )
+    return f"""
+        {view_toggle_for(
+            f"/books",
+            state=request.ctx.prefers_shelf,
+        )}
+        {build_shelf(
+            books,
+            base_url="/books",
+            page_no=page_no,
+        ) if request.ctx.prefers_shelf else build_table(
+            books,
+            base_url="/books",
+            page_no=page_no,
+        )}
+    """
 
 
 @app.get("/books/search")

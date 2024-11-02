@@ -154,6 +154,7 @@ button.login {
   background: #cecece;
   text-decoration: none;
   transition: all 0.3s;
+  margin-bottom: 45px;
 }
 
 .spine:hover {
@@ -167,4 +168,31 @@ button.login {
   position: absolute;
   right: 110px;
   top: 32px;
+}
+
+.index {
+  display: inline-block;
+  background-color: black;
+  padding-top: 400px;
+  width: 3px;
+  position: relative;
+  z-index: -1;
+  margin-left: 1px;
+  margin-right: 1px;
+  span {
+    position: relative;
+    top: 25px;
+    left: -13px;
+    background-color: black;
+    border: 5px solid black;
+    border-radius: 49px;
+    color: white;
+    font-size: large;
+    width: 30px;
+    display: block;
+    height: 30px;
+    text-align: center;
+    margin-top: -2px;
+    line-height: 18px;
+  }
 }

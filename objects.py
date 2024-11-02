@@ -1,6 +1,7 @@
 import re
 import json
 import random
+import string
 from datetime import date, datetime
 import isbnlib
 from isbnlib.registry import bibformatters
@@ -197,6 +198,20 @@ class Book(Model):
         if self.borrowed_to:
             return "color: black; background: repeating-linear-gradient(45deg, #ffafaf, #ffafaf 10px, white 10px, white 20px); padding-left: {pad}px; padding-right: {pad}px; max-height: {mh}px;"
         return f"color: {fg}; background: {bg}; padding-left: {pad}px; padding-right: {pad}px; max-height: {mh}px;"
+
+    @property
+    def index_letter(self):
+        authors = self.authors
+        if not authors:
+            return "#"
+        letter = authors[0].upper()
+        if letter in string.ascii_uppercase:
+            return letter
+        return "#"
+        # TODO: proper sort-key-based index, once we have _that_
+        author, *_ = authors.partition(",")
+        *_, name = author.rpartition(" ")
+        return name[0].upper()
 
     def populate(self):
         cur = conn.cursor()
