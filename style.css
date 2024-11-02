@@ -145,13 +145,11 @@ button.login {
 .spine {
   border-radius: 3px;
   writing-mode: sideways-lr;
-  max-height: none;
   font-size: large;
   display: inline-block;
   padding-top: 10px;
   padding-bottom: 5px;
   border: 1px solid gray;
-  background: #cecece;
   text-decoration: none;
   transition: all 0.3s;
   margin-bottom: 45px;
