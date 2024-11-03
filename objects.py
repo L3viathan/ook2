@@ -290,9 +290,12 @@ class Book(Model):
     def search(cls, q, *, page_size=20, page_no=0, collection_id=None):
         cur = conn.cursor()
         conditions = [
-            "UPPER(title) LIKE '%' || ? || '%'"
+            """(
+                UPPER(title) LIKE '%' || ? || '%'
+                OR UPPER(authors) LIKE '%' || ? || '%'
+            )"""
         ]
-        bindings = [q.upper()]
+        bindings = [q.upper(), q.upper()]
         if collection_id is not None:
             conditions.append("collection_id = ?")
             bindings.append(collection_id)
