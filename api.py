@@ -139,7 +139,12 @@ def page(fn):
                 hx-get="/login"
                 hx-swap="outerHTML"
             >🔑</button>"""
-        return html(TEMPLATE(main=ret, login=login_button))
+        if isinstance(ret, tuple):
+            title, ret = ret
+            title = f"{title} — Ook!"
+        else:
+            title = "Ook!"
+        return html(TEMPLATE(main=ret, login=login_button, title=title))
     return wrapper
 
 
@@ -166,7 +171,7 @@ async def index(request):
 @app.get("/collections")
 @page
 async def list_collections(request):
-    return "<br>".join(
+    return "Collections", "<br>".join(
         str(collection) for collection in O.Collection.all(order_by="name COLLATE NOCASE ASC")
     ) + ("""<button
         hx-get="/collections/new"
@@ -348,7 +353,7 @@ async def view_collection(request, collection_id: int):
     else:
         isbn_input_url = ""
 
-    return f"""
+    return collection.name, f"""
         {collection:heading}
         {view_toggle_for(
             f"/collections/{collection_id}",
@@ -500,7 +505,7 @@ async def put_book_data(request, book_id: int):
 @page
 async def view_book(request, book_id: int):
     book = O.Book(book_id)
-    return f"""
+    return book.title, f"""
         <article>
             <header>
                 <h3>{book:heading} {
@@ -550,7 +555,7 @@ async def list_books(request):
         limit=PAGE_SIZE + 1,  # so we know if there would be more results
         order_by="sort_key ASC",
     )
-    return f"""
+    return "All books", f"""
         {view_toggle_for(
             f"/books",
             state=request.ctx.prefers_shelf,
