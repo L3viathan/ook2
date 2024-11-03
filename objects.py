@@ -203,14 +203,13 @@ class Book(Model):
         authors = unicodedata.normalize("NFKD", authors)
         parts = []
         for author in authors.split(","):
-            norm = re.sub(r"\([^)]+\)", "", author.strip())
+            norm = re.sub(r"\([^)]+\)", "", author.strip()).strip()
             fnames, _, lname = norm.rpartition(" ")
             parts.append(lname)
             if fnames:
                 parts.append(fnames)
         parts.append(self.title)
-        sort_key = " ".join(parts).upper()
-        return sort_key
+        return " ".join(parts).upper()
 
     def populate(self):
         cur = conn.cursor()
