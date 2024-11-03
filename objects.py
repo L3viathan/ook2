@@ -2,6 +2,7 @@ import re
 import json
 import random
 import string
+import unicodedata
 from datetime import date, datetime
 import isbnlib
 from isbnlib.registry import bibformatters
@@ -213,6 +214,9 @@ class Book(Model):
         authors = self.authors
         if not authors:
             return ""
+        # the following decomposes all diacritics, hopefully sorting "Faruk
+        # Šehić" under "S".
+        authors = unicodedata.normalize("NFKD", authors)
         parts = []
         for author in authors.split(","):
             norm = re.sub(r"\([^)]+\)", "", author.strip())
