@@ -497,9 +497,36 @@ async def view_book(request, book_id: int):
                     else ""
                 }</h3>
             </header>
-            {book:details}
+            {f"{book:details-editable}" if request.ctx.authenticated else f"{book:details}"}
         </article>
     """
+
+
+@app.get("/books/<book_id>/authors-form")
+@fragment
+async def edit_authors_form(request, book_id: int):
+    book = O.Book(book_id)
+    return f"""<td><input
+        hx-post="/books/{book_id}/authors"
+        hx-swap="outerHTML"
+        hx-trigger="blur"
+        hx-target="closest td"
+        name="authors"
+        value="{book.authors}"
+    ></td>"""
+
+
+@app.post("/books/<book_id>/authors")
+@authenticated
+@fragment
+async def change_authors(request, book_id: int):
+    book = O.Book(book_id)
+    form = D(request.form)
+    if authors := form["authors"]:
+        book.authors = authors
+        book.sort_key = book.calculate_sort_key()
+        book.save()
+    return f"{book:authors-editable}"
 
 
 @app.get("/books")

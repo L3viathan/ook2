@@ -194,3 +194,7 @@ button.login {
     line-height: 18px;
   }
 }
+
+td>input {
+  margin-bottom: 0;
+}

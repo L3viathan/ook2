@@ -402,7 +402,7 @@ class Book(Model):
                 href="/books/{self.id}"
             >
             {self.title}</a>"""
-        elif fmt == "details":
+        elif fmt.startswith("details"):
             parts = []
             if self.borrowed_to:
                 parts.append(f"""<div class="alert warning">
@@ -410,14 +410,18 @@ class Book(Model):
                 </div>""")
             parts.append("<table>")
             parts.append(f"<tr><td><strong>Title</strong></td><td>{self.title}</td></tr>")
-            parts.append(f"<tr><td><strong>Authors</strong></td><td>{self.authors}</td></tr>")
+            if fmt.endswith("-editable"):
+                parts.append(f"<tr><td><strong>Authors</strong></td>{self:authors-editable}</tr>")
+            else:
+                parts.append(f"<tr><td><strong>Authors</strong></td><td>{self.authors}</td></tr>")
             parts.append(f"<tr><td><strong>Collection</strong></td><td>{self.collection}</td></tr>")
             parts.append(f"<tr><td><strong>Publisher</strong></td><td>{self.publisher}</td></tr>")
             parts.append(f"<tr><td><strong>Year</strong></td><td>{self.year}</td></tr>")
             parts.append(f"<tr><td><strong>ISBN</strong></td><td>{self.isbn}</td></tr>")
             parts.append("</table>")
             return "".join(parts)
-
+        elif fmt == "authors-editable":
+            return f"""<td hx-swap="outerHTML" hx-get="/books/{self.id}/authors-form">{self.authors}</td>"""
         else:
             return f"""<a
                 class="clickable book-link"
