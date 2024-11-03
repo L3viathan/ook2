@@ -81,22 +81,6 @@ class Model:
         ).fetchall():
             yield cls(row["id"])
 
-    @classmethod
-    def all_lent_out(cls, *, order_by="id ASC", page_no=0, page_size=20):
-        cur = conn.cursor()
-        for row in cur.execute(
-            f"""
-            SELECT
-                id
-            FROM {getattr(cls, "table_name", f"{cls.__name__.lower()}s")}
-            WHERE borrowed_to IS NOT NULL
-            ORDER BY {order_by}
-            LIMIT {page_size}
-            OFFSET {page_no * page_size}
-            """
-        ).fetchall():
-            yield cls(row["id"])
-
 
 class Collection(Model):
     table_name = "collections"
@@ -271,6 +255,22 @@ class Book(Model):
         if data:
             book.import_metadata(data)
         return book
+
+    @classmethod
+    def all_lent_out(cls, *, order_by="id ASC", page_no=0, page_size=20):
+        cur = conn.cursor()
+        for row in cur.execute(
+            f"""
+            SELECT
+                id
+            FROM {getattr(cls, "table_name", f"{cls.__name__.lower()}s")}
+            WHERE borrowed_to IS NOT NULL
+            ORDER BY {order_by}
+            LIMIT {page_size}
+            OFFSET {page_no * page_size}
+            """
+        ).fetchall():
+            yield cls(row["id"])
 
     def import_metadata(self, data=None):
         data = data or get_first_isbn_match(self.isbn)

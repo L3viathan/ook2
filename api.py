@@ -146,9 +146,21 @@ def page(fn):
 @app.get("/")
 @page
 async def index(request):
-    return build_table(
-        O.Book.all_lent_out(),
-    )
+    lent_out = list(O.Book.all_lent_out())
+    return f"""<article>
+    <h4>Hello!</h4>
+    <p>Here you can find most of the physical books we have at home. They are
+    sorted into collections, or you can just look at all of them at once. If
+    you want to borrow some (and you know one of us), that can probably be
+    arranged.</p>
+    {
+        f"<p>Speaking of which, there are currently {len(lent_out)} books lent out:</p> {build_table(lent_out)}"
+        if len(lent_out) > 1 else
+        f"<p>Speaking of which, there is currently one book lent out:</p> {build_table(lent_out)}"
+        if lent_out else ""
+    }
+    </article>"""
+    return build_table(lent_out)
 
 
 @app.get("/collections")
