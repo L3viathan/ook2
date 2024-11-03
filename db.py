@@ -75,3 +75,7 @@ def rename_places_to_collections(cur):
 @migration(2)
 def rename_place_id_to_collection_id(cur):
     cur.execute("""ALTER TABLE books RENAME COLUMN place_id TO collection_id""")
+
+@migration(3)
+def add_sort_key(cur):
+    cur.execute("""ALTER TABLE books ADD sort_key TEXT""")

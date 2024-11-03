@@ -172,6 +172,7 @@ class Book(Model):
         "created_at",
         "imported_at",
         "collection",
+        "sort_key",
     )
     table_name = "books"
 
@@ -201,17 +202,27 @@ class Book(Model):
 
     @property
     def index_letter(self):
-        authors = self.authors
-        if not authors:
+        if not self.sort_key:
             return "#"
-        letter = authors[0].upper()
+        letter = self.sort_key[0]
         if letter in string.ascii_uppercase:
             return letter
         return "#"
-        # TODO: proper sort-key-based index, once we have _that_
-        author, *_ = authors.partition(",")
-        *_, name = author.rpartition(" ")
-        return name[0].upper()
+
+    def calculate_sort_key(self):
+        authors = self.authors
+        if not authors:
+            return ""
+        parts = []
+        for author in authors.split(","):
+            norm = re.sub(r"\([^)]+\)", "", author.strip())
+            fnames, _, lname = norm.rpartition(" ")
+            parts.append(lname)
+            if fnames:
+                parts.append(fnames)
+        parts.append(self.title)
+        sort_key = " ".join(parts).upper()
+        return sort_key
 
     def populate(self):
         cur = conn.cursor()
@@ -233,6 +244,11 @@ class Book(Model):
         self.created_at = row["created_at"]
         self.imported_at = row["imported_at"]
         self.borrowed_to = row["borrowed_to"]
+        self.sort_key = row["sort_key"]
+        if not self.sort_key:
+            print("Updating missing sort_key for", self.title)
+            self.sort_key = self.calculate_sort_key()
+            self.save()
         if row["collection_id"]:
             self.collection = Collection(row["collection_id"])
         else:
@@ -263,6 +279,7 @@ class Book(Model):
             self.publisher = data.get("publisher")
             self.year = data.get("year")
             self.imported_at = datetime.now()
+            self.sort_key = self.calculate_sort_key()
             self.save()
 
     @classmethod
@@ -438,7 +455,7 @@ class Book(Model):
         cur.execute(
             """
             UPDATE books
-            SET title=?, authors=?, publisher=?, year=?, imported_at=?
+            SET title=?, authors=?, publisher=?, year=?, imported_at=?, sort_key=?
             WHERE id = ?
             """,
             (
@@ -447,6 +464,7 @@ class Book(Model):
                 self.publisher,
                 self.year,
                 self.imported_at,
+                self.sort_key,
                 self.id,
             ),
         )

@@ -329,6 +329,7 @@ async def view_collection(request, collection_id: int):
         collection_id=collection.id,
         offset=PAGE_SIZE * (page_no - 1),
         limit=PAGE_SIZE + 1,  # so we know if there would be more results
+        order_by="sort_key ASC",
     )
     if request.ctx.authenticated:
         isbn_input_url = f"/collections/{collection_id}/add-book"
@@ -508,12 +509,7 @@ async def list_books(request):
     books = O.Book.all(
         offset=PAGE_SIZE * (page_no - 1),
         limit=PAGE_SIZE + 1,  # so we know if there would be more results
-        # TODO: this isn't perfect, and it's complicated. Maybe we want to
-        # store a sort_key instead, which we can decide on in Python-land. This
-        # will also allow more complicated handlings of e.g. sorting by title
-        # when authors are identical, omitting "The", "A", etc., and whatever
-        # else we might want.
-        order_by="authors ASC",
+        order_by="sort_key ASC",
     )
     return f"""
         {view_toggle_for(
