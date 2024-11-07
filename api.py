@@ -90,6 +90,8 @@ async def logout(request):
 
 
 def pagination(url, page_no, *, more_results=True):
+    if not more_results and page_no == 1:
+        return ""
     q = "&" if "?" in url else "?"
     return f"""<br>
         <a
