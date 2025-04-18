@@ -174,11 +174,8 @@ async def index(request):
 
 @app.get("/authors")
 @page
-async def list_authors(
-    request,
-    page_size=PAGE_SIZE,
-    page_no=1,
-):
+async def list_authors(request):
+    page_no = int(request.args.get("page", 1))
     cur = conn.cursor()
     cur.execute(
         """
@@ -190,12 +187,12 @@ async def list_authors(
         LIMIT ?
         OFFSET ?
         """,
-        ((page_size + 1), (page_no - 1) * (page_size + 1))
+        ((PAGE_SIZE + 1), (page_no - 1) * (PAGE_SIZE + 1))
     )
     rows = []
     more_results = False
     for i, row in enumerate(cur.fetchall()):
-        if i == page_size:
+        if i == PAGE_SIZE:
             more_results = True
             break
         if not row[0].strip():
