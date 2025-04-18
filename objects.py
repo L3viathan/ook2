@@ -312,12 +312,16 @@ class Book(Model):
             yield cls(row["id"])
 
     @classmethod
-    def all(cls, *, order_by="id ASC", collection_id=None, offset=0, limit=20):
+    def all(cls, *, order_by="id ASC", collection_id=None, offset=0, limit=20, author=None):
         conditions = ["1=1"]
         values = []
         if collection_id is not None:
             conditions.append("collection_id = ?")
             values.append(collection_id)
+
+        if author is not None:
+            conditions.append("authors = ?")
+            values.append(author)
 
         cur = conn.cursor()
         for row in cur.execute(

@@ -3,11 +3,13 @@ import base64
 import functools
 from datetime import datetime
 from types import CoroutineType
+from urllib.parse import quote
 
 import isbnlib
 from sanic import Sanic, HTTPResponse, html, file, redirect
 
 import objects as O
+from db import conn
 
 
 PAGE_SIZE = 100
@@ -168,6 +170,53 @@ async def index(request):
     }
     </article>"""
     return build_table(lent_out)
+
+
+@app.get("/authors")
+@page
+async def list_authors(
+    request,
+    page_size=PAGE_SIZE,
+    page_no=1,
+):
+    cur = conn.cursor()
+    cur.execute(
+        """
+        SELECT
+            authors, COUNT(1) AS count
+        FROM books
+        GROUP BY authors
+        ORDER BY authors
+        LIMIT ?
+        OFFSET ?
+        """,
+        ((page_size + 1), (page_no - 1) * (page_size + 1))
+    )
+    rows = []
+    more_results = False
+    for i, row in enumerate(cur.fetchall()):
+        if i == page_size:
+            more_results = True
+            break
+        if not row[0].strip():
+            continue
+        rows.append(f"""
+            <tr><td><a href="/books?author={quote(row["authors"])}">{row["authors"]}</a></td><td>{row["count"]}</td></tr>
+        """)
+    return "Authors", f"""
+        <table class="striped">
+        <thead>
+        <tr><th>Author</th><th># books</th></tr>
+        </thead>
+        <tbody>
+        {"".join(rows)}
+        </tbody></table>
+        {pagination(
+            "/authors",
+            page_no,
+            more_results=more_results,
+        )}
+    """
 
 
 @app.get("/collections")
@@ -552,12 +601,18 @@ async def change_authors(request, book_id: int):
 @page
 async def list_books(request):
     page_no = int(request.args.get("page", 1))
+    author = request.args.get("author")
     books = O.Book.all(
         offset=PAGE_SIZE * (page_no - 1),
         limit=PAGE_SIZE + 1,  # so we know if there would be more results
         order_by="sort_key ASC",
+        author=author
     )
-    return "All books", f"""
+    if author:
+        title = f"All books of {author}"
+    else:
+        title = "All books"
+    return title, f"""
         {view_toggle_for(
             f"/books",
             state=request.ctx.prefers_shelf,
