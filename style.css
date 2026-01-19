@@ -135,7 +135,7 @@ article div[role="group"] {
   color: #0c5460;
 }
 
-button.login {
+a.login {
   position: absolute;
   top: 5px;
   right: 5px;

@@ -45,20 +45,14 @@ def authenticated(route):
     return wrapper
 
 
-@app.get("/login")
+@app.post("/login")
 async def login(request):
     try:
-        auth = request.headers["Authorization"]
-        _, _, encoded = auth.partition(" ")
+        auth = request.form.get("password")
         redirect_url = D(request.args).get("redirect_url", "/")
-        if base64.b64decode(encoded).decode() == CORRECT_AUTH:
-            response = html(
-                """<button
-                    class="login"
-                    hx-get="/logout"
-                    hx-swap="outerHTML"
-                >🚪</button>""",
-            )
+        if auth == CORRECT_AUTH:
+            print("successfully authed")
+            response = redirect(redirect_url)
             response.add_cookie(
                 "ook_auth",
                 CORRECT_AUTH,
@@ -68,25 +62,15 @@ async def login(request):
                 max_age=60*60*24*365,  # roughly one year
             )
             return response
-        else:
-            raise ValueError
     except (KeyError, AssertionError, ValueError):
-        return HTTPResponse(
-            body="401 Unauthorized",
-            status=401,
-            headers={"WWW-Authenticate": 'Basic realm="Ook! access"'},
-        )
+        pass
+    print("unsuccessfully authed", repr(auth), repr(CORRECT_AUTH))
+    return redirect("/login")
 
 
 @app.get("/logout")
 async def logout(request):
-    response = html(
-        """<button
-            class="login"
-            hx-get="/login"
-            hx-swap="outerHTML"
-        >🔑</button>"""
-    )
+    response = redirect("/")
     response.delete_cookie("ook_auth")
     return response
 
@@ -132,17 +116,15 @@ def page(fn):
         if isinstance(ret, CoroutineType):
             ret = await ret
         if request.ctx.authenticated:
-            login_button = """<button
+            login_button = """<a
                 class="login"
-                hx-get="/logout"
-                hx-swap="outerHTML"
-            >🚪</button>"""
+                href="/logout"
+            >🚪</a>"""
         else:
-            login_button = """<button
+            login_button = """<a
                 class="login"
-                hx-get="/login"
-                hx-swap="outerHTML"
-            >🔑</button>"""
+                href="/login"
+            >🔑</a>"""
         if isinstance(ret, tuple):
             title, ret = ret
             title = f"{title} — Ook!"
@@ -150,6 +132,18 @@ def page(fn):
             title = "Ook!"
         return html(TEMPLATE(main=ret, login=login_button, title=title))
     return wrapper
+
+
+@app.get("/login")
+@page
+async def login_form(request):
+    return """
+    <form method="POST">
+        <label>
+        Password:
+        <input type="password" name="password">
+    </form>
+    """
 
 
 @app.get("/")
