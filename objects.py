@@ -243,6 +243,7 @@ class Book(Model):
 
     @classmethod
     def new_from_isbn(cls, isbn, collection_id=None):
+        isbn = "".join(c for c in isbn if c in "0123456789")
         data = get_first_isbn_match(isbn)
         cur = conn.cursor()
         cur.execute(
