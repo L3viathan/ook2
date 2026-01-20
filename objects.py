@@ -453,17 +453,9 @@ class Book(Model):
         self._cache.pop(self.id)
 
     def rename(self, title):
-        cur = conn.cursor()
-        cur.execute(
-            """
-            UPDATE books
-            SET title=?
-            WHERE id = ?
-            """,
-            (title, self.id),
-        )
-        conn.commit()
         self.title = title
+        self.sort_key = self.calculate_sort_key()
+        self.save()
 
     def save(self):
         cur = conn.cursor()
