@@ -179,11 +179,11 @@ class Book(Model):
     def style(self):
         random_state = int(self.isbn)
         bg, fg = Book.colors[random_state % len(Book.colors)]
-        pad = random_state % 10
-        mh = random_state % 100 + 350
+        pad = (random_state % 10) / 10
+        mh = (random_state % 100 + 350) / 3
         if self.borrowed_to:
-            return "color: black; background: repeating-linear-gradient(45deg, #ffafaf, #ffafaf 10px, white 10px, white 20px); padding-left: {pad}px; padding-right: {pad}px; max-height: {mh}px;"
-        return f"color: {fg}; background: {bg}; padding-left: {pad}px; padding-right: {pad}px; max-height: {mh}px;"
+            return "color: black; background: repeating-linear-gradient(45deg, #ffafaf, #ffafaf 10px, white 10px, white 20px); padding-left: {pad}mm; padding-right: {pad}mm; max-height: {mh}mm;"
+        return f"color: {fg}; background: {bg}; padding-left: {pad}mm; padding-right: {pad}mm; max-height: {mh}mm;"
 
     @property
     def index_letter(self):

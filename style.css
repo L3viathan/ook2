@@ -143,16 +143,16 @@ a.login {
 }
 
 .spine {
-  border-radius: 3px;
+  border-radius: 1mm;
   writing-mode: sideways-lr;
-  font-size: large;
+  font-size: 0.5cm;
   display: inline-block;
-  padding-top: 10px;
-  padding-bottom: 5px;
+  padding-top: 0.2cm;
+  padding-bottom: 0.1cm;
   border: 1px solid gray;
   text-decoration: none;
   transition: all 0.3s;
-  margin-bottom: 45px;
+  margin-bottom: 2cm;
 }
 
 .spine:hover {
