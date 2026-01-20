@@ -295,6 +295,7 @@ def build_isbn_input(isbn_input_url, mode="table"):
     if mode == "shelf":
         return f"""<input
             type="text"
+            inputmode="numeric"
             name="isbn"
             hx-post="{isbn_input_url}"
             hx-swap="outerHTML"
@@ -305,6 +306,7 @@ def build_isbn_input(isbn_input_url, mode="table"):
         return f"""
             <tr><td colspan=3><input
                 type="text"
+                inputmode="numeric"
                 name="isbn"
                 hx-post="{isbn_input_url}"
                 hx-swap="outerHTML"
