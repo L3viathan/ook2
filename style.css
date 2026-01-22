@@ -142,6 +142,11 @@ a.login {
   transform: scale(0.5);
 }
 
+.bookshelf {
+  white-space: nowrap;
+  overflow-y: hidden;
+}
+
 .spine {
   border-radius: 1mm;
   writing-mode: sideways-lr;
@@ -153,6 +158,7 @@ a.login {
   text-decoration: none;
   transition: all 0.3s;
   margin-bottom: 2cm;
+  white-space: normal;
 }
 
 .spine:hover {

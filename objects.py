@@ -221,11 +221,12 @@ class Book(Model):
         author_state = int(hashlib.md5(self.authors.encode()).hexdigest(), 16)
         colors = Book.palettes[author_state % len(Book.palettes)]
         bg, fg = colors[random_state % len(colors)]
-        pad = (random_state % 10) / 10
+        pad = (random_state % 30) / 10
         mh = (random_state % 100 + 350) / 3
+        fs = (100 + (((random_state + 7) % 20) - 10)) / 180
         if self.borrowed_to:
-            return "color: black; background: repeating-linear-gradient(45deg, #ffafaf, #ffafaf 10px, white 10px, white 20px); padding-left: {pad}mm; padding-right: {pad}mm; max-height: {mh}mm;"
-        return f"color: {fg}; background: {bg}; padding-left: {pad}mm; padding-right: {pad}mm; max-height: {mh}mm;"
+            return "color: black; background: repeating-linear-gradient(45deg, #ffafaf, #ffafaf 10px, white 10px, white 20px); padding-left: {pad}mm; padding-right: {pad}mm; max-height: {mh}mm; font-size: {fs}cm;"
+        return f"color: {fg}; background: {bg}; padding-left: {pad}mm; padding-right: {pad}mm; max-height: {mh}mm; font-size: {fs}cm;"
 
     @property
     def index_letter(self):
