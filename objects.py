@@ -3,6 +3,7 @@ import json
 import random
 import string
 import unicodedata
+import hashlib
 from datetime import date, datetime
 import isbnlib
 from isbnlib.registry import bibformatters
@@ -161,24 +162,63 @@ class Book(Model):
     )
     table_name = "books"
 
-    colors = [
-        ("#405D72", "#cecece"),
-        ("#C4DAD2", "black"),
-        ("#B6C4B6", "black"),
-        ("#DDDDDD", "#06113C"),
-        ("#EEEEEE", "#06113C"),
-        ("#D5D5D5", "#091353"),
-        ("#87A7B3", "#001F3F"),
-        ("#6A9AB0", "#001F3F"),
-        ("#B9E5E8", "#0B192C"),
-        ("#DFF2EB", "#0B192C"),
-        ("#7AB2D3", "#0B192C"),
+    palettes = [
+        [
+            # blue-grey-ish
+            ("#405D72", "#cecece"),
+            ("#C4DAD2", "black"),
+            ("#B6C4B6", "black"),
+            ("#DDDDDD", "#06113C"),
+            ("#EEEEEE", "#06113C"),
+            ("#D5D5D5", "#091353"),
+            ("#87A7B3", "#001F3F"),
+            ("#6A9AB0", "#001F3F"),
+            ("#B9E5E8", "#0B192C"),
+            ("#DFF2EB", "#0B192C"),
+            ("#7AB2D3", "#0B192C"),
+        ],
+        [
+            # dark red-ish
+            ("#9e422b", "white"),
+            ("#933724", "white"),
+            ("#882c1e", "white"),
+            ("#7e2218", "white"),
+            ("#731712", "white"),
+        ],
+        [
+            ("#2c4c3b", "lightgrey"),
+            ("#306844", "lightgrey"),
+            ("#182c25", "lightgrey"),
+            ("#455b55", "lightgrey"),
+            ("#1e453e", "lightgrey"),
+        ],
+        [
+            # yellow
+            ("#edb926", "black"),
+            ("#d1b200", "black"),
+        ],
+        [
+            # black
+            ("#000000", "white"),
+            ("#444444", "white"),
+            ("#696969", "white"),
+        ],
+        [
+            # dark-ish blue
+            ("#03002e", "white"),
+            ("#010048", "white"),
+            ("#010057", "white"),
+            ("#02006c", "white"),
+            ("#090088", "white"),
+        ],
     ]
 
     @property
     def style(self):
         random_state = int(self.isbn)
-        bg, fg = Book.colors[random_state % len(Book.colors)]
+        author_state = int(hashlib.md5(self.authors.encode()).hexdigest(), 16)
+        colors = Book.palettes[author_state % len(Book.palettes)]
+        bg, fg = colors[random_state % len(colors)]
         pad = (random_state % 10) / 10
         mh = (random_state % 100 + 350) / 3
         if self.borrowed_to:
