@@ -25,11 +25,11 @@ You'll need:
     - `isbnlib` (for fetching book metadata)
 
 Generate some random credentials, and run `sanic api` inside the Git checkout
-with the environment variable `OOK_CREDS` set to username and password,
-colon-separated, e.g. `OOK_CREDS=foo:bar sanic api`.
+with the environment variable `OOK_CREDS` set to some password, e.g.
+`OOK_CREDS=foobar sanic api`.
 
 I personally deploy this [via Ansible as a systemd unit, and put it behind
 Caddy](https://github.com/L3viathan/ansibly/blob/master/roles/mainserver/tasks/ook.yml),
 but you can obviously do this as you please.
 
-The data lives in a SQLite database called `ook.db`, in case you want to back this up.
+The data lives in a SQLite database called `ook2.db`, in case you want to back this up.
