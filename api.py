@@ -639,6 +639,14 @@ async def search_books(request):
     )
 
 
+@app.post("/settings/recalculate")
+@authenticated
+@fragment
+async def recalculate_sort_keys(request):
+    O.Book.recalculate_all_sort_keys()
+    return "Ok"
+
+
 @app.get("/htmx.js")
 async def htmx_js(request):
     return await file("htmx.js", mime_type="text/javascript")

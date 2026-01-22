@@ -5,6 +5,8 @@ import string
 import unicodedata
 import hashlib
 from datetime import date, datetime
+from types import SimpleNamespace
+
 import isbnlib
 from isbnlib.registry import bibformatters
 
@@ -312,6 +314,18 @@ class Book(Model):
             """
         ).fetchall():
             yield cls(row["id"])
+
+    @classmethod
+    def recalculate_all_sort_keys(cls):
+        cur = conn.cursor()
+        sort_keys = {}
+        for row in cur.execute(f"SELECT id, title, authors FROM books"):
+            sort_keys[row["id"]] = cls.calculate_sort_key(SimpleNamespace(**row))
+
+        cur.executemany(
+            "UPDATE books SET sort_key=? WHERE id=?",
+            ((key, id) for id, key in sort_keys.items()),
+        )
 
     def import_metadata(self, data=None):
         data = data or get_first_isbn_match(self.isbn)
