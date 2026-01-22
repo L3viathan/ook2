@@ -248,6 +248,7 @@ class Book(Model):
             parts.append(lname)
             if fnames:
                 parts.append(fnames)
+        parts.append("\U0010fffd")  # ensure it's always sorted by authors
         parts.append(self.title)
         return " ".join(parts).upper()
 
