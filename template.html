@@ -7,7 +7,7 @@
     <link rel="stylesheet" href="/pico.min.css">
     <meta name="htmx-config" content='{{"scrollIntoViewOnBoost": false}}'>
 </head>
-<body hx-boost="true">
+<body>
     <header>
     {login}
     <nav class="container">
@@ -31,6 +31,7 @@
     </nav>
     </header>
     <main id="container" class="container">{main}</main>
+    {shelf}
     <footer>
         <div id="notifications"></div>
     </footer>

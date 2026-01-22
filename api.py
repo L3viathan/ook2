@@ -95,6 +95,16 @@ def pagination(url, page_no, *, more_results=True):
     """
 
 
+def infinite(url, page_no):
+    q = "&" if "?" in url else "?"
+    return f"""
+        hx-get="{url}{q}page={page_no + 1}"
+        hx-trigger="intersect once"
+        hx-select=".bookshelf>*"
+        hx-replace="outerHTML"
+    """
+
+
 with open("template.html") as f:
     TEMPLATE = f.read().format
 
@@ -130,7 +140,9 @@ def page(fn):
             title = f"{title} — Ook!"
         else:
             title = "Ook!"
-        return html(TEMPLATE(main=ret, login=login_button, title=title))
+        if not isinstance(ret, dict):
+            ret = {"main": ret, "shelf": ""}
+        return html(TEMPLATE(**ret, login=login_button, title=title))
     return wrapper
 
 
@@ -258,20 +270,18 @@ async def new_collection(request):
 def build_shelf(
     books,
     *,
-    isbn_input_url=None,
     base_url=None,
     page_size=PAGE_SIZE,
     page_no=1,
 ):
     parts = ["""<div class="bookshelf">"""]
-    if isbn_input_url:
-        parts.append(build_isbn_input(isbn_input_url, mode="shelf"))
     more_results = False
     last_letter = None
     for i, book in enumerate(books):
         did_index = False
         if i == page_size:
             more_results = True
+            parts.append(f'<span {infinite(base_url, page_no)} class="spinner">x</span>')
         else:
             letter = book.index_letter
             if letter != last_letter and i:
@@ -282,12 +292,6 @@ def build_shelf(
             if did_index:
                 parts.append("</span>")
     parts.append("</div>")
-    if base_url:
-        parts.append(pagination(
-            base_url,
-            page_no,
-            more_results=more_results,
-        ))
     return "".join(parts)
 
 
@@ -397,15 +401,15 @@ async def view_collection(request, collection_id: int):
     else:
         isbn_input_url = ""
 
-    return collection.name, f"""
+    return collection.name, {"main": f"""
         {collection:heading}
         {view_toggle_for(
             f"/collections/{collection_id}",
             state=request.ctx.prefers_shelf,
         )}
-        {build_shelf(
+        {build_isbn_input(isbn_input_url, mode="shelf")}
+        """, "shelf": f"""{build_shelf(
             books,
-            isbn_input_url=isbn_input_url,
             base_url=f"/collections/{collection_id}",
             page_no=page_no,
         ) if request.ctx.prefers_shelf else build_table(
@@ -414,7 +418,7 @@ async def view_collection(request, collection_id: int):
             base_url=f"/collections/{collection_id}",
             page_no=page_no,
         )}
-    """
+    """}
 
 
 @app.post("/books/<book_id>/rename")
@@ -605,21 +609,24 @@ async def list_books(request):
         title = f"All books of {author}"
     else:
         title = "All books"
-    return title, f"""
+    return title, {
+        "main": f"""
         {view_toggle_for(
             f"/books",
             state=request.ctx.prefers_shelf,
-        )}
-        {build_shelf(
-            books,
-            base_url="/books",
-            page_no=page_no,
-        ) if request.ctx.prefers_shelf else build_table(
-            books,
-            base_url="/books",
-            page_no=page_no,
-        )}
-    """
+        )}""",
+        "shelf": f"""
+            {build_shelf(
+                books,
+                base_url="/books",
+                page_no=page_no,
+            ) if request.ctx.prefers_shelf else build_table(
+                books,
+                base_url="/books",
+                page_no=page_no,
+            )}
+        """,
+    }
 
 
 @app.get("/books/search")
