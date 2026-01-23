@@ -101,7 +101,8 @@ def infinite(url, page_no):
         hx-get="{url}{q}page={page_no}"
         hx-trigger="intersect once"
         hx-select=".bookshelf>*"
-        hx-swap="afterend"
+        hx-target=".bookshelf"
+        hx-swap="beforeend"
     """
 
 
