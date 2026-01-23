@@ -101,8 +101,7 @@ def infinite(url, page_no):
         hx-get="{url}{q}page={page_no}"
         hx-trigger="intersect once"
         hx-select=".bookshelf>*"
-        hx-replace="outerHTML"
-        hx-push-url="true"
+        hx-swap="afterend"
     """
 
 
@@ -276,25 +275,34 @@ def build_shelf(
     page_no=1,
 ):
     parts = ["""<div class="bookshelf">"""]
-    # if page_no > 1:
-    #     parts.append(f'<span {infinite(base_url, page_no-1)} class="spinner">x</span>')
     more_results = False
     last_letter = None
+    books = list(books)
+    if len(books) > page_size:
+        more_results = True
+        books.pop()
+    else:
+        more_results = False
     for i, book in enumerate(books):
         did_index = False
-        if i == page_size:
-            more_results = True
-            parts.append(f'<span {infinite(base_url, page_no+1)} class="spinner">x</span>')
-        else:
-            letter = book.index_letter
-            if letter != last_letter and i:
-                parts.append(f"""<span class="nobreak"><div class="index"><span>{letter}</span></div>""")
-                did_index = True
-            last_letter = letter
-            parts.append(f"{book:spine}")
-            if did_index:
-                parts.append("</span>")
+        letter = book.index_letter
+        if letter != last_letter and i:
+            parts.append(f"""<span class="nobreak"><div class="index"><span>{letter}</span></div>""")
+            did_index = True
+        last_letter = letter
+        book = f"{book:spine}"
+        if i == page_size - 3:
+            book = book.replace("<a", f"<a {infinite(base_url, page_no+1)}")
+        parts.append(book)
+        if did_index:
+            parts.append("</span>")
     parts.append("</div>")
+    parts.append("""
+        <script>
+        var s = document.getElementsByClassName("bookshelf")[0];
+        s.addEventListener("wheel", function(e){s.scrollBy({top: 0, left: -e.wheelDeltaY*3, behavior: 'smooth'});})
+        </script>
+    """)
     return "".join(parts)
 
 
