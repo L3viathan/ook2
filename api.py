@@ -98,10 +98,11 @@ def pagination(url, page_no, *, more_results=True):
 def infinite(url, page_no):
     q = "&" if "?" in url else "?"
     return f"""
-        hx-get="{url}{q}page={page_no + 1}"
+        hx-get="{url}{q}page={page_no}"
         hx-trigger="intersect once"
         hx-select=".bookshelf>*"
         hx-replace="outerHTML"
+        hx-push-url="true"
     """
 
 
@@ -275,13 +276,15 @@ def build_shelf(
     page_no=1,
 ):
     parts = ["""<div class="bookshelf">"""]
+    # if page_no > 1:
+    #     parts.append(f'<span {infinite(base_url, page_no-1)} class="spinner">x</span>')
     more_results = False
     last_letter = None
     for i, book in enumerate(books):
         did_index = False
         if i == page_size:
             more_results = True
-            parts.append(f'<span {infinite(base_url, page_no)} class="spinner">x</span>')
+            parts.append(f'<span {infinite(base_url, page_no+1)} class="spinner">x</span>')
         else:
             letter = book.index_letter
             if letter != last_letter and i:
