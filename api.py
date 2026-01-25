@@ -190,7 +190,7 @@ async def list_authors(request):
             authors, COUNT(1) AS count
         FROM books
         GROUP BY authors
-        ORDER BY authors
+        ORDER BY sort_key
         LIMIT ?
         OFFSET ?
         """,
