@@ -399,10 +399,11 @@ class Book(Model):
         if fmt == "heading":
             return f"""
             <span
+                class="booktitle"
                 hx-post="/books/{self.id}/rename"
                 hx-swap="outerHTML"
                 hx-trigger="blur delay:500ms"
-                hx-vals="javascript: title:htmx.find('span').innerHTML"
+                hx-vals="javascript: title:htmx.find('.booktitle').innerHTML"
                 contenteditable
             >{self.title}</span>
             """
