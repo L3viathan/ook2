@@ -224,9 +224,10 @@ class Book(Model):
         pad = (random_state % 30) / 10
         mh = (random_state % 100 + 350) / 3
         fs = (100 + (((random_state + 7) % 20) - 10)) / 180
+        common = f"padding-left: {pad}mm; padding-right: {pad}mm; max-height: {mh}mm; font-size: {fs}cm;"
         if self.borrowed_to:
-            return "color: black; background: repeating-linear-gradient(45deg, #ffafaf, #ffafaf 10px, white 10px, white 20px); padding-left: {pad}mm; padding-right: {pad}mm; max-height: {mh}mm; font-size: {fs}cm;"
-        return f"color: {fg}; background: {bg}; padding-left: {pad}mm; padding-right: {pad}mm; max-height: {mh}mm; font-size: {fs}cm;"
+            return f"color: black; background: repeating-linear-gradient(45deg, #ffafaf, #ffafaf 10px, white 10px, white 20px); {common}"
+        return f"color: {fg}; background: {bg}; {common}"
 
     @property
     def index_letter(self):

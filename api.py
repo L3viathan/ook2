@@ -12,7 +12,7 @@ import objects as O
 from db import conn
 
 
-PAGE_SIZE = 100
+PAGE_SIZE = 30
 app = Sanic("ook2")
 CORRECT_AUTH = os.environ["OOK_CREDS"]
 
@@ -95,14 +95,21 @@ def pagination(url, page_no, *, more_results=True):
     """
 
 
-def infinite(url, page_no):
+def infinite(url, page_no, direction):
     q = "&" if "?" in url else "?"
+    if direction == "forward":
+        page_no += 1
+        swap = "beforeend"
+    else:
+        page_no -= 1
+        swap = "afterbeginning"
     return f"""
-        hx-get="{url}{q}page={page_no}"
+        hx-get="{url}{q}page={page_no}&direction={direction}"
         hx-trigger="intersect once"
         hx-select=".bookshelf>*"
         hx-target=".bookshelf"
-        hx-swap="beforeend"
+        hx-push-url="true"
+        hx-swap="{swap}"
     """
 
 
@@ -274,7 +281,12 @@ def build_shelf(
     base_url=None,
     page_size=PAGE_SIZE,
     page_no=1,
+    direction,
 ):
+    if direction is None:
+        extensions = ("back", "forwards")
+    else:
+        extensions = (direction,)
     parts = ["""<div class="bookshelf">"""]
     more_results = False
     last_letter = None
@@ -284,6 +296,8 @@ def build_shelf(
         books.pop()
     else:
         more_results = False
+    if "back" in extensions and page_no > 1:
+        parts.append(f"<span {infinite(base_url, page_no, 'back')}>.</span>")
     for i, book in enumerate(books):
         did_index = False
         letter = book.index_letter
@@ -292,8 +306,8 @@ def build_shelf(
             did_index = True
         last_letter = letter
         book = f"{book:spine}"
-        if i == page_size - 3:
-            book = book.replace("<a", f"<a {infinite(base_url, page_no+1)}")
+        if more_results and i == page_size - 3:
+            book = book.replace("<a", f"<a {infinite(base_url, page_no, 'forward')}")
         parts.append(book)
         if did_index:
             parts.append("</span>")
@@ -401,6 +415,7 @@ async def set_view_pref(request):
 @page
 async def view_collection(request, collection_id: int):
     page_no = int(request.args.get("page", 1))
+    direction = request.args.get("direction")
     collection = O.Collection(collection_id)
     books = O.Book.all(
         collection_id=collection.id,
@@ -424,6 +439,7 @@ async def view_collection(request, collection_id: int):
             books,
             base_url=f"/collections/{collection_id}",
             page_no=page_no,
+            direction=direction,
         ) if request.ctx.prefers_shelf else build_table(
             books,
             isbn_input_url=isbn_input_url,
