@@ -27,7 +27,7 @@ async def read_cookies(request):
         request.ctx.authenticated = True
     else:
         request.ctx.authenticated = False
-    if request.cookies.get("prefers_shelf"):
+    if request.cookies.get("prefers_shelf", True):
         request.ctx.prefers_shelf = True
     else:
         request.ctx.prefers_shelf = False
