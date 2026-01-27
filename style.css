@@ -184,6 +184,7 @@ a.login {
   z-index: 0;
   margin-left: 1px;
   margin-right: 1px;
+  transform: translateX(18px);
   span {
     position: relative;
     top: 25px;
@@ -200,7 +201,6 @@ a.login {
     margin-top: -2px;
     line-height: 18px;
   }
-  transform: translateX(32px);
 }
 
 td>input {
