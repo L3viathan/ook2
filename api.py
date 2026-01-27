@@ -12,7 +12,7 @@ import objects as O
 from db import conn
 
 
-PAGE_SIZE = 30
+PAGE_SIZE = 50
 app = Sanic("ook2")
 CORRECT_AUTH = os.environ["OOK_CREDS"]
 
@@ -99,17 +99,18 @@ def infinite(url, page_no, direction):
     q = "&" if "?" in url else "?"
     if direction == "forward":
         page_no += 1
-        swap = "beforeend"
+        text = "➡\ufe0e"
     else:
         page_no -= 1
-        swap = "afterbeginning"
+        text = "⬅\ufe0e"
     return f"""
+        <span
+        class="nextprev clickable"
         hx-get="{url}{q}page={page_no}&direction={direction}"
-        hx-trigger="intersect once"
         hx-select=".bookshelf>*"
-        hx-target=".bookshelf"
-        hx-push-url="true"
-        hx-swap="{swap}"
+        hx-push-url="{url}{q}page={page_no}"
+        hx-swap="outerHTML"
+        >{text}</span>
     """
 
 
@@ -284,7 +285,7 @@ def build_shelf(
     direction,
 ):
     if direction is None:
-        extensions = ("back", "forwards")
+        extensions = ("back", "forward")
     else:
         extensions = (direction,)
     parts = ["""<div class="bookshelf">"""]
@@ -297,7 +298,7 @@ def build_shelf(
     else:
         more_results = False
     if "back" in extensions and page_no > 1:
-        parts.append(f"<span {infinite(base_url, page_no, 'back')}>.</span>")
+        parts.append(infinite(base_url, page_no, "back"))
     for i, book in enumerate(books):
         did_index = False
         letter = book.index_letter
@@ -306,11 +307,11 @@ def build_shelf(
             did_index = True
         last_letter = letter
         book = f"{book:spine}"
-        if more_results and i == page_size - 3:
-            book = book.replace("<a", f"<a {infinite(base_url, page_no, 'forward')}")
         parts.append(book)
         if did_index:
             parts.append("</span>")
+    if "forward" in extensions and more_results:
+        parts.append(infinite(base_url, page_no, "forward"))
     parts.append("</div>")
     parts.append("""
         <script>

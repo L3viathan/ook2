@@ -164,8 +164,9 @@ a.login {
 .spine:hover {
   /* transform: translate(0, -10px); */
   /* transform: translateZ(3); */
-  transform: perspective(100px) translateZ(10px);
-  box-shadow: 0px -5px 10px gray;
+  /* transform: perspective(100px) translateZ(10px); */
+  /* box-shadow: 0px -5px 10px gray; */
+  transform: translate(-9px, 6px);
 }
 
 .view-toggle {
@@ -180,7 +181,7 @@ a.login {
   padding-top: 400px;
   width: 3px;
   position: relative;
-  z-index: -1;
+  z-index: 0;
   margin-left: 1px;
   margin-right: 1px;
   span {
@@ -199,8 +200,67 @@ a.login {
     margin-top: -2px;
     line-height: 18px;
   }
+  transform: translateX(32px);
 }
 
 td>input {
   margin-bottom: 0;
+}
+
+
+
+/* experiment */
+
+@property --_l {
+  syntax: "<flength>";
+  initial-value: 0px;
+  inherits: true;
+}
+@property --_r {
+  syntax: "<length>";
+  initial-value: 0px;
+  inherits: true;
+}
+
+.spine {
+  --d: 18px;  /* depth */
+  --a: 20deg; /* angle */
+  --x: 10px;
+
+  --_d: calc(100% - var(--d));
+  --_l: var(--d);  /* was: 20px); */
+  --_r: var(--d);
+
+  padding-block: var(--d);
+  outline: var(--d) solid #0008;
+  outline-offset: calc(-1 * var(--d));
+
+  /* clip-path: polygon( calc(var(--_l) - 2px) calc(var(--_d) - var(--x)), var(--_l) var(--d), var(--d) var(--d),var(--_d) var(--d), calc(var(--_d) + var(--_r)) calc(var(--d) + var(--x)), calc(var(--_d) + var(--_r)) calc(var(--_d) - var(--x)), var(--_d) var(--_d),var(--d) var(--_d) ) */
+
+  clip-path: polygon(
+    /* The two green points on the left */
+    calc(var(--_l) - 2px) calc(var(--_d) - var(--x)),
+    var(--_l) var(--d),
+
+    /* The two red points on the top */
+    var(--d) var(--d),var(--_d) var(--d),
+
+    /* The two green points on the right */
+    calc(var(--_d) + var(--_r)) calc(var(--d)  + var(--x)),
+    calc(var(--_d) + var(--_r)) calc(var(--_d) - var(--x)),
+
+    /* The two red points on the bottom */
+    var(--_d) var(--_d),var(--d) var(--_d)
+
+    );
+  transition: transform .3s, --_r .15s, --_l .15s .15s;
+
+  padding-top: calc(var(--d) + 20px);
+  padding-bottom: calc(var(--d) + 20px);
+  margin-right: -32px;
+}
+
+.nextprev {
+  position: relative;
+  top: 26px;
 }

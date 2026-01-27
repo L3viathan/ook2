@@ -221,10 +221,10 @@ class Book(Model):
         author_state = int(hashlib.md5(self.authors.encode()).hexdigest(), 16)
         colors = Book.palettes[author_state % len(Book.palettes)]
         bg, fg = colors[random_state % len(colors)]
-        pad = (random_state % 30) / 10
+        pad = 15 + (random_state % 30) / 10
         mh = (random_state % 100 + 350) / 3
         fs = (100 + (((random_state + 7) % 20) - 10)) / 180
-        common = f"padding-left: {pad}mm; padding-right: {pad}mm; max-height: {mh}mm; font-size: {fs}cm;"
+        common = f"padding-left: {pad}px; padding-right: {pad}px; max-height: {mh}mm; font-size: {fs}cm;"
         if self.borrowed_to:
             return f"color: black; background: repeating-linear-gradient(45deg, #ffafaf, #ffafaf 10px, white 10px, white 20px); {common}"
         return f"color: {fg}; background: {bg}; {common}"
