@@ -628,6 +628,7 @@ async def change_authors(request, book_id: int):
 async def list_books(request):
     page_no = int(request.args.get("page", 1))
     author = request.args.get("author")
+    direction = request.args.get("direction")
     books = O.Book.all(
         offset=PAGE_SIZE * (page_no - 1),
         limit=PAGE_SIZE + 1,  # so we know if there would be more results
@@ -649,6 +650,7 @@ async def list_books(request):
                 books,
                 base_url="/books",
                 page_no=page_no,
+                direction=direction,
             ) if request.ctx.prefers_shelf else build_table(
                 books,
                 base_url="/books",
