@@ -264,3 +264,11 @@ td>input {
   position: relative;
   top: 26px;
 }
+
+.add-book-button {
+  float: right;
+  border-radius: 100px;
+  height: 50px;
+  width: 50px;
+  padding: 0;
+}

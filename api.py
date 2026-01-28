@@ -322,44 +322,27 @@ def build_shelf(
     return "".join(parts)
 
 
-def build_isbn_input(isbn_input_url, mode="table"):
-    if mode == "shelf":
-        return f"""<input
-            type="text"
-            inputmode="numeric"
-            name="isbn"
-            hx-post="{isbn_input_url}"
-            hx-swap="outerHTML"
-            placeholder="insert ISBN"
-            autofocus
-        >"""
-    else:
-        return f"""
-            <tr><td colspan=3><input
-                type="text"
-                inputmode="numeric"
-                name="isbn"
-                hx-post="{isbn_input_url}"
-                hx-swap="outerHTML"
-                hx-target="closest tr"
-                placeholder="insert ISBN"
-                autofocus
-            ></td></tr>
-        """
+def build_isbn_input(collection_id):
+    return f"""<input
+        type="text"
+        inputmode="numeric"
+        name="isbn"
+        hx-post="/collections/{collection_id}/add-book"
+        hx-swap="outerHTML"
+        placeholder="insert ISBN"
+        autofocus
+    >"""
 
 
 def build_table(
     books,
     *,
-    isbn_input_url=None,
     base_url=None,
     page_size=PAGE_SIZE,
     page_no=1,
 ):
     rows = []
     more_results = False
-    if isbn_input_url:
-        rows.append(build_isbn_input(isbn_input_url, mode="table"))
     for i, book in enumerate(books):
         if i == page_size:
             more_results = True
@@ -412,6 +395,18 @@ async def set_view_pref(request):
     return response
 
 
+def add_book_button(collection_id):
+    return f"""
+        <button class="add-book-button" hx-get="/collections/{collection_id}/isbn-input" hx-swap="outerHTML">+</button>
+    """
+
+
+@app.get("/collections/<collection_id>/isbn-input")
+@fragment
+async def isbn_input(request, collection_id: int):
+    return build_isbn_input(collection_id)
+
+
 @app.get("/collections/<collection_id>")
 @page
 async def view_collection(request, collection_id: int):
@@ -419,35 +414,30 @@ async def view_collection(request, collection_id: int):
     direction = request.args.get("direction")
     collection = O.Collection(collection_id)
     books = O.Book.all(
-        collection_id=collection.id,
+        collection_id=collection_id,
         offset=PAGE_SIZE * (page_no - 1),
         limit=PAGE_SIZE + 1,  # so we know if there would be more results
         order_by="sort_key ASC",
     )
-    if request.ctx.authenticated:
-        isbn_input_url = f"/collections/{collection_id}/add-book"
-    else:
-        isbn_input_url = ""
 
-    return collection.name, {"main": f"""
+    return collection.name, f"""
+        {add_book_button(collection_id) if request.ctx.authenticated else ""}
         {collection:heading}
         {view_toggle_for(
             f"/collections/{collection_id}",
             state=request.ctx.prefers_shelf,
         )}
-        {build_isbn_input(isbn_input_url, mode="shelf")}
-        """, "shelf": f"""{build_shelf(
+        {build_shelf(
             books,
             base_url=f"/collections/{collection_id}",
             page_no=page_no,
             direction=direction,
         ) if request.ctx.prefers_shelf else build_table(
             books,
-            isbn_input_url=isbn_input_url,
             base_url=f"/collections/{collection_id}",
             page_no=page_no,
         )}
-    """}
+    """
 
 
 @app.post("/books/<book_id>/rename")
@@ -534,20 +524,14 @@ async def add_book_by_isbn(request, collection_id: int):
         book = O.Book.new_from_isbn(isbn, collection_id=collection_id)
     except isbnlib.NotValidISBNError:
         return f"""
-            {build_isbn_input(f"/collections/{collection_id}/add-book", mode=display)}
+            {build_isbn_input(collection_id)}
             <div hx-swap-oob="beforeend:#notifications">
                 <span class="notification error">Invalid ISBN, try scanning again</span>
             </div>
         """
     if book.title:
-        book_repr = (
-            f"{book:table-row:title,authors,location}"
-            if display == "table"
-            else f"{book:spine}"
-        )
         return f"""
-            {build_isbn_input(f"/collections/{collection_id}/add-book", mode=display)}
-            {book_repr}
+            {build_isbn_input(collection_id)}
             <div hx-swap-oob="beforeend:#notifications">
                 <span class="notification">Added <em>{book.title}</em></span>
             </div>
@@ -573,7 +557,7 @@ async def put_book_data(request, book_id: int):
     collection_id = data["collection_id"]
     book.save()
     display = "shelf" if request.ctx.prefers_shelf else "table"
-    return f"""{build_isbn_input(f"/collections/{collection_id}/add-book", mode=display)}<div
+    return f"""{build_isbn_input(collection_id)}<div
         hx-swap-oob="beforeend:#notifications"
         >Added <em>{book.title}</em></div>"""
 
@@ -639,25 +623,22 @@ async def list_books(request):
         title = f"All books of {author}"
     else:
         title = "All books"
-    return title, {
-        "main": f"""
+    return title, f"""
         {view_toggle_for(
             f"/books",
             state=request.ctx.prefers_shelf,
-        )}""",
-        "shelf": f"""
-            {build_shelf(
-                books,
-                base_url="/books",
-                page_no=page_no,
-                direction=direction,
-            ) if request.ctx.prefers_shelf else build_table(
-                books,
-                base_url="/books",
-                page_no=page_no,
-            )}
-        """,
-    }
+        )}
+        {build_shelf(
+            books,
+            base_url="/books",
+            page_no=page_no,
+            direction=direction,
+        ) if request.ctx.prefers_shelf else build_table(
+            books,
+            base_url="/books",
+            page_no=page_no,
+        )}
+    """
 
 
 @app.get("/books/search")
